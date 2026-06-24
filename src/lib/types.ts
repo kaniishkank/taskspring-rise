@@ -1,0 +1,51 @@
+export type Priority = "low" | "medium" | "high" | "urgent";
+export type TaskStatus =
+  | "assigned"
+  | "in_progress"
+  | "submitted"
+  | "under_review"
+  | "approved"
+  | "rejected"
+  | "completed";
+export type Role = "super_admin" | "manager" | "staff";
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  avatar?: string;
+  department?: string;
+  active: boolean;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  priority: Priority;
+  status: TaskStatus;
+  assignedTo: string; // user id
+  assignedBy: string;
+  createdAt: string;
+  dueDate: string;
+  attachments: { name: string; size: string }[];
+  comments: { id: string; userId: string; text: string; at: string }[];
+  submissions: {
+    id: string;
+    at: string;
+    notes: string;
+    files: string[];
+    links: string[];
+    status: TaskStatus;
+  }[];
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  category: "assignment" | "reminder" | "approval" | "rejection";
+  read: boolean;
+  at: string;
+}
