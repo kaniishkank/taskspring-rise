@@ -8,6 +8,7 @@ import { PriorityBadge, StatusBadge } from "@/components/app/status-badge";
 import { UserAvatar } from "@/components/app/user-avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { tasks, userById } from "@/lib/mock/data";
+import type { Task } from "@/lib/types";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/tasks/$id")({
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/_app/tasks/$id")({
 });
 
 function TaskDetail() {
-  const { task } = Route.useLoaderData();
+  const { task } = Route.useLoaderData() as { task: Task };
   const assignee = userById(task.assignedTo);
   const assigner = userById(task.assignedBy);
 
