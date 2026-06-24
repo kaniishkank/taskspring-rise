@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppSubmissionsRouteImport } from './routes/_app.submissions'
 import { Route as AppReportsRouteImport } from './routes/_app.reports'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
@@ -27,6 +28,11 @@ const AppRoute = AppRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsersRoute = AppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSubmissionsRoute = AppSubmissionsRouteImport.update({
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/reports': typeof AppReportsRoute
   '/submissions': typeof AppSubmissionsRoute
+  '/users': typeof AppUsersRoute
   '/tasks/$id': typeof AppTasksIdRoute
   '/tasks/new': typeof AppTasksNewRoute
   '/tasks/': typeof AppTasksIndexRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AppNotificationsRoute
   '/reports': typeof AppReportsRoute
   '/submissions': typeof AppSubmissionsRoute
+  '/users': typeof AppUsersRoute
   '/': typeof AppIndexRoute
   '/tasks/$id': typeof AppTasksIdRoute
   '/tasks/new': typeof AppTasksNewRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/reports': typeof AppReportsRoute
   '/_app/submissions': typeof AppSubmissionsRoute
+  '/_app/users': typeof AppUsersRoute
   '/_app/': typeof AppIndexRoute
   '/_app/tasks/$id': typeof AppTasksIdRoute
   '/_app/tasks/new': typeof AppTasksNewRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/reports'
     | '/submissions'
+    | '/users'
     | '/tasks/$id'
     | '/tasks/new'
     | '/tasks/'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/reports'
     | '/submissions'
+    | '/users'
     | '/'
     | '/tasks/$id'
     | '/tasks/new'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '/_app/notifications'
     | '/_app/reports'
     | '/_app/submissions'
+    | '/_app/users'
     | '/_app/'
     | '/_app/tasks/$id'
     | '/_app/tasks/new'
@@ -160,6 +172,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/users': {
+      id: '/_app/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/submissions': {
@@ -227,6 +246,7 @@ interface AppRouteChildren {
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppReportsRoute: typeof AppReportsRoute
   AppSubmissionsRoute: typeof AppSubmissionsRoute
+  AppUsersRoute: typeof AppUsersRoute
   AppIndexRoute: typeof AppIndexRoute
   AppTasksIdRoute: typeof AppTasksIdRoute
   AppTasksNewRoute: typeof AppTasksNewRoute
@@ -239,6 +259,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppNotificationsRoute: AppNotificationsRoute,
   AppReportsRoute: AppReportsRoute,
   AppSubmissionsRoute: AppSubmissionsRoute,
+  AppUsersRoute: AppUsersRoute,
   AppIndexRoute: AppIndexRoute,
   AppTasksIdRoute: AppTasksIdRoute,
   AppTasksNewRoute: AppTasksNewRoute,
