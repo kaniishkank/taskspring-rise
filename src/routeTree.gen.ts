@@ -13,6 +13,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppSubmissionsRouteImport } from './routes/_app.submissions'
 import { Route as AppMyTasksRouteImport } from './routes/_app.my-tasks'
+import { Route as AppCalendarRouteImport } from './routes/_app.calendar'
 import { Route as AppTasksIndexRouteImport } from './routes/_app.tasks.index'
 import { Route as AppTasksNewRouteImport } from './routes/_app.tasks.new'
 import { Route as AppTasksIdRouteImport } from './routes/_app.tasks.$id'
@@ -36,6 +37,11 @@ const AppMyTasksRoute = AppMyTasksRouteImport.update({
   path: '/my-tasks',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCalendarRoute = AppCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
   id: '/tasks/',
   path: '/tasks/',
@@ -54,6 +60,7 @@ const AppTasksIdRoute = AppTasksIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/calendar': typeof AppCalendarRoute
   '/my-tasks': typeof AppMyTasksRoute
   '/submissions': typeof AppSubmissionsRoute
   '/tasks/$id': typeof AppTasksIdRoute
@@ -61,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/tasks/': typeof AppTasksIndexRoute
 }
 export interface FileRoutesByTo {
+  '/calendar': typeof AppCalendarRoute
   '/my-tasks': typeof AppMyTasksRoute
   '/submissions': typeof AppSubmissionsRoute
   '/': typeof AppIndexRoute
@@ -71,6 +79,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/_app/calendar': typeof AppCalendarRoute
   '/_app/my-tasks': typeof AppMyTasksRoute
   '/_app/submissions': typeof AppSubmissionsRoute
   '/_app/': typeof AppIndexRoute
@@ -82,6 +91,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/calendar'
     | '/my-tasks'
     | '/submissions'
     | '/tasks/$id'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/tasks/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/calendar'
     | '/my-tasks'
     | '/submissions'
     | '/'
@@ -98,6 +109,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/_app/calendar'
     | '/_app/my-tasks'
     | '/_app/submissions'
     | '/_app/'
@@ -140,6 +152,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMyTasksRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/calendar': {
+      id: '/_app/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AppCalendarRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/tasks/': {
       id: '/_app/tasks/'
       path: '/tasks'
@@ -165,6 +184,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppCalendarRoute: typeof AppCalendarRoute
   AppMyTasksRoute: typeof AppMyTasksRoute
   AppSubmissionsRoute: typeof AppSubmissionsRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -174,6 +194,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppCalendarRoute: AppCalendarRoute,
   AppMyTasksRoute: AppMyTasksRoute,
   AppSubmissionsRoute: AppSubmissionsRoute,
   AppIndexRoute: AppIndexRoute,
