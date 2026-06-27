@@ -1,10 +1,15 @@
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppSidebar } from "@/components/app/sidebar";
 import { Navbar } from "@/components/app/navbar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_app")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined" && !window.localStorage.getItem("mgg_user")) {
+      throw redirect({ to: "/login" });
+    }
+  },
   component: AppLayout,
 });
 
