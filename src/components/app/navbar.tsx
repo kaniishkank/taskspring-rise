@@ -82,7 +82,14 @@ export function Navbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
               <Link to="/settings"><SettingsIcon className="mr-2 h-4 w-4" />Settings</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem><LogOut className="mr-2 h-4 w-4" />Sign out</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                try { window.localStorage.removeItem("mgg_user"); } catch {}
+                window.location.href = "/login";
+              }}
+            >
+              <LogOut className="mr-2 h-4 w-4" />Sign out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

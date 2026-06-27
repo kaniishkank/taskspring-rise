@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/")({
-  component: MGGApp,
+export const Route = createFileRoute("/login")({
+  component: LoginPage,
 });
 
-function MGGApp() {
+function LoginPage() {
   return (
     <iframe
       src="/mgg.html"
-      title="Mahatma Global Gateway"
+      title="Sign in — Mahatma Global Gateway"
       style={{
         position: "fixed",
         inset: 0,
