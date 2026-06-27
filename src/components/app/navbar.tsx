@@ -1,9 +1,21 @@
-import { Bell, Menu, Moon, Search, Sun, LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
+import {
+  Bell,
+  Menu,
+  Moon,
+  Search,
+  Sun,
+  LogOut,
+  User as UserIcon,
+  Settings as SettingsIcon,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { currentUser, notifications } from "@/lib/mock/data";
+import { useClock } from "@/hooks/use-clock";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,20 +26,50 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export function Navbar({ onOpenSidebar }: { onOpenSidebar: () => void }) {
+export function Navbar({
+  onOpenSidebar,
+  onToggleCollapse,
+  collapsed,
+}: {
+  onOpenSidebar: () => void;
+  onToggleCollapse?: () => void;
+  collapsed?: boolean;
+}) {
   const { theme, toggle } = useTheme();
   const unread = notifications.filter((n) => !n.read).length;
+  const { time, dateShort, day } = useClock();
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6">
       <Button variant="ghost" size="icon" className="lg:hidden" onClick={onOpenSidebar}>
         <Menu className="h-5 w-5" />
       </Button>
+      {onToggleCollapse && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden lg:inline-flex"
+          onClick={onToggleCollapse}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+        </Button>
+      )}
       <div className="relative hidden max-w-md flex-1 md:block">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="Search tasks, people, files..." className="h-10 pl-9" />
       </div>
       <div className="ml-auto flex items-center gap-1">
+        <div className="mr-2 hidden items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-1.5 text-right md:flex">
+          <div className="leading-tight">
+            <div className="font-mono text-sm font-semibold tracking-wider text-foreground">
+              {time}
+            </div>
+            <div className="text-[10px] text-muted-foreground">
+              {day} • {dateShort}
+            </div>
+          </div>
+        </div>
         <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
