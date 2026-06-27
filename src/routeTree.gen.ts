@@ -10,7 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
-import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppSubmissionsRouteImport } from './routes/_app.submissions'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
@@ -26,10 +26,10 @@ const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppIndexRoute = AppIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppUsersRoute = AppUsersRouteImport.update({
   id: '/users',
@@ -83,7 +83,7 @@ const AppTasksIdRoute = AppTasksIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppIndexRoute
+  '/': typeof IndexRoute
   '/calendar': typeof AppCalendarRoute
   '/my-tasks': typeof AppMyTasksRoute
   '/notifications': typeof AppNotificationsRoute
@@ -96,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/tasks/': typeof AppTasksIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/calendar': typeof AppCalendarRoute
   '/my-tasks': typeof AppMyTasksRoute
   '/notifications': typeof AppNotificationsRoute
@@ -103,13 +104,13 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/submissions': typeof AppSubmissionsRoute
   '/users': typeof AppUsersRoute
-  '/': typeof AppIndexRoute
   '/tasks/$id': typeof AppTasksIdRoute
   '/tasks/new': typeof AppTasksNewRoute
   '/tasks': typeof AppTasksIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/my-tasks': typeof AppMyTasksRoute
@@ -118,7 +119,6 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/submissions': typeof AppSubmissionsRoute
   '/_app/users': typeof AppUsersRoute
-  '/_app/': typeof AppIndexRoute
   '/_app/tasks/$id': typeof AppTasksIdRoute
   '/_app/tasks/new': typeof AppTasksNewRoute
   '/_app/tasks/': typeof AppTasksIndexRoute
@@ -139,6 +139,7 @@ export interface FileRouteTypes {
     | '/tasks/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/calendar'
     | '/my-tasks'
     | '/notifications'
@@ -146,12 +147,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/submissions'
     | '/users'
-    | '/'
     | '/tasks/$id'
     | '/tasks/new'
     | '/tasks'
   id:
     | '__root__'
+    | '/'
     | '/_app'
     | '/_app/calendar'
     | '/_app/my-tasks'
@@ -160,13 +161,13 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/submissions'
     | '/_app/users'
-    | '/_app/'
     | '/_app/tasks/$id'
     | '/_app/tasks/new'
     | '/_app/tasks/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
 }
 
@@ -179,12 +180,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/': {
-      id: '/_app/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/users': {
       id: '/_app/users'
@@ -267,7 +268,6 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppSubmissionsRoute: typeof AppSubmissionsRoute
   AppUsersRoute: typeof AppUsersRoute
-  AppIndexRoute: typeof AppIndexRoute
   AppTasksIdRoute: typeof AppTasksIdRoute
   AppTasksNewRoute: typeof AppTasksNewRoute
   AppTasksIndexRoute: typeof AppTasksIndexRoute
@@ -281,7 +281,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppSubmissionsRoute: AppSubmissionsRoute,
   AppUsersRoute: AppUsersRoute,
-  AppIndexRoute: AppIndexRoute,
   AppTasksIdRoute: AppTasksIdRoute,
   AppTasksNewRoute: AppTasksNewRoute,
   AppTasksIndexRoute: AppTasksIndexRoute,
@@ -290,6 +289,7 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
 }
 export const routeTree = rootRouteImport
