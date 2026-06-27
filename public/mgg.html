@@ -471,10 +471,15 @@ document.getElementById('loginForm').addEventListener('submit',(e)=>{
   else if(lower==='teacher01'){role='Teacher'; name='Vikram Singh';}
   else { name = id.charAt(0).toUpperCase()+id.slice(1); }
 
-  window.__user = {id,role,name};
-  applyUser();
-  show('app');
-  setTimeout(drawChart,300);
+  const user = {id,role,name};
+  try {
+    const target = (window.parent && window.parent !== window) ? window.parent : window;
+    target.localStorage.setItem('mgg_user', JSON.stringify(user));
+    target.location.href = '/';
+  } catch (err) {
+    window.localStorage.setItem('mgg_user', JSON.stringify(user));
+    window.location.href = '/';
+  }
 });
 
 function applyUser(){
