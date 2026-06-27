@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bell, Lock, Palette, Save, User } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,9 +8,10 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/app/page-header";
 import { UserAvatar } from "@/components/app/user-avatar";
-import { currentUser } from "@/lib/mock/data";
 import { useTheme } from "@/lib/theme";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
+import type { User as UserType } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsPage,
@@ -17,6 +19,10 @@ export const Route = createFileRoute("/_app/settings")({
 
 function SettingsPage() {
   const { theme, toggle } = useTheme();
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  useEffect(() => {
+    void api.getCurrentUser().then((data) => setCurrentUser(data.user)).catch(() => {});
+  }, []);
   return (
     <div>
       <PageHeader title="Settings" description="Manage your account, preferences and notifications." />
@@ -31,16 +37,16 @@ function SettingsPage() {
         <TabsContent value="profile">
           <div className="rounded-xl border bg-card p-6 shadow-sm">
             <div className="flex items-center gap-4">
-              <UserAvatar name={currentUser.name} size={64} />
+              <UserAvatar name={currentUser?.name ?? "User"} size={64} />
               <div>
-                <h3 className="text-base font-semibold">{currentUser.name}</h3>
-                <p className="text-sm text-muted-foreground capitalize">{currentUser.role.replace("_", " ")} · {currentUser.department}</p>
+                <h3 className="text-base font-semibold">{currentUser?.name ?? "Loading user"}</h3>
+                <p className="text-sm text-muted-foreground capitalize">{currentUser?.role?.replace("_", " ") ?? "user"} · {currentUser?.department ?? ""}</p>
               </div>
             </div>
             <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div><Label>Full name</Label><Input defaultValue={currentUser.name} className="mt-1.5" /></div>
-              <div><Label>Email</Label><Input defaultValue={currentUser.email} className="mt-1.5" /></div>
-              <div><Label>Department</Label><Input defaultValue={currentUser.department} className="mt-1.5" /></div>
+              <div><Label>Full name</Label><Input defaultValue={currentUser?.name ?? ""} className="mt-1.5" /></div>
+              <div><Label>Email</Label><Input defaultValue={currentUser?.email ?? ""} className="mt-1.5" /></div>
+              <div><Label>Department</Label><Input defaultValue={currentUser?.department ?? ""} className="mt-1.5" /></div>
               <div><Label>Role</Label><Input defaultValue="Manager" disabled className="mt-1.5" /></div>
             </div>
             <div className="mt-6 flex justify-end">

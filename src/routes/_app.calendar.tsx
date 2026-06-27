@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   addMonths,
   eachDayOfInterval,
@@ -16,7 +16,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/app/page-header";
 import { PriorityBadge } from "@/components/app/status-badge";
-import { tasks } from "@/lib/mock/data";
+import { api } from "@/lib/api";
+import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/calendar")({
@@ -33,6 +34,12 @@ const priorityDot: Record<string, string> = {
 function CalendarPage() {
   const [cursor, setCursor] = useState(new Date());
   const [view, setView] = useState<"month" | "week" | "day">("month");
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    void api.getTasks().then(setTasks).catch(() => {});
+  }, []);
+
   const start = startOfWeek(startOfMonth(cursor));
   const end = endOfWeek(endOfMonth(cursor));
   const days = eachDayOfInterval({ start, end });

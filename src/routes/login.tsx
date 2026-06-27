@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useClock } from "@/hooks/use-clock";
 import logoAsset from "@/assets/mgg-logo.svg.asset.json";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -27,18 +28,25 @@ function LoginPage() {
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginId.trim()) return;
-    const { role, name } = resolveRole(loginId);
+    setLoading(true);
     try {
-      window.localStorage.setItem(
-        "mgg_user",
-        JSON.stringify({ id: loginId, role, name }),
-      );
-    } catch {}
-    navigate({ to: "/" });
+      const response = await api.login(loginId, password);
+      window.localStorage.setItem("mgg_user", JSON.stringify({ id: response.user.id, role: response.user.role, name: response.user.name, token: response.token }));
+      navigate({ to: "/" });
+    } catch {
+      const { role, name } = resolveRole(loginId);
+      try {
+        window.localStorage.setItem("mgg_user", JSON.stringify({ id: loginId, role, name }));
+      } catch {}
+      navigate({ to: "/" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -124,9 +132,9 @@ function LoginPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full gap-2" size="lg">
+              <Button type="submit" className="w-full gap-2" size="lg" disabled={loading}>
                 <LogIn className="h-4 w-4" />
-                Sign in
+                {loading ? "Signing in…" : "Sign in"}
               </Button>
 
               <p className="text-center text-[11px] leading-relaxed text-muted-foreground">

@@ -10,10 +10,11 @@ import {
   Users,
   Settings,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { currentUser } from "@/lib/mock/data";
-import type { Role } from "@/lib/types";
+import type { Role, User } from "@/lib/types";
 import logoAsset from "@/assets/mgg-logo.svg.asset.json";
+import { api } from "@/lib/api";
 
 type Item = { to: string; label: string; icon: typeof LayoutDashboard; roles: Role[] };
 
@@ -37,7 +38,11 @@ export function AppSidebar({
   collapsed?: boolean;
 }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const visible = items.filter((i) => i.roles.includes(currentUser.role));
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  useEffect(() => {
+    void api.getCurrentUser().then((data) => setCurrentUser(data.user)).catch(() => {});
+  }, []);
+  const visible = items.filter((i) => currentUser ? i.roles.includes(currentUser.role) : true);
 
   return (
     <aside
@@ -106,13 +111,13 @@ export function AppSidebar({
           )}
         >
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
-            {currentUser.name.split(" ").map((n) => n[0]).join("")}
+            {currentUser?.name ? currentUser.name.split(" ").map((n) => n[0]).join("") : "U"}
           </div>
           {!collapsed && (
             <div className="min-w-0 leading-tight">
-              <div className="truncate text-sm font-medium">{currentUser.name}</div>
+              <div className="truncate text-sm font-medium">{currentUser?.name ?? "Loading user"}</div>
               <div className="truncate text-[11px] capitalize text-muted-foreground">
-                {currentUser.role.replace("_", " ")}
+                {currentUser?.role?.replace("_", " ") ?? "user"}
               </div>
             </div>
           )}

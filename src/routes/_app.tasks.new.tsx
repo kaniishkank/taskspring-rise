@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Paperclip, Save, Send, Upload, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { users } from "@/lib/mock/data";
+import { api } from "@/lib/api";
+import type { User } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/tasks/new")({
   component: NewTaskPage,
@@ -23,6 +24,10 @@ export const Route = createFileRoute("/_app/tasks/new")({
 function NewTaskPage() {
   const nav = useNavigate();
   const [files, setFiles] = useState<string[]>(["brief.pdf"]);
+  const [users, setUsers] = useState<User[]>([]);
+  useEffect(() => {
+    void api.getUsers().then(setUsers).catch(() => {});
+  }, []);
 
   return (
     <div className="mx-auto max-w-4xl">

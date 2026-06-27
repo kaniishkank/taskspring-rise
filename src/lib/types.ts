@@ -27,6 +27,8 @@ export interface Task {
   status: TaskStatus;
   assignedTo: string; // user id
   assignedBy: string;
+  assignedToId: string;
+  assignedById: string;
   createdAt: string;
   dueDate: string;
   attachments: { name: string; size: string }[];

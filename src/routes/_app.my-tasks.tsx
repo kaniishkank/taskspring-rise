@@ -1,16 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
+import { useEffect, useState } from "react";
 import { ListChecks } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { PriorityBadge, StatusBadge } from "@/components/app/status-badge";
 import { EmptyState } from "@/components/app/empty-state";
-import { tasks } from "@/lib/mock/data";
+import { api } from "@/lib/api";
+import type { Task } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/my-tasks")({
   component: MyTasks,
 });
 
 function MyTasks() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  useEffect(() => {
+    void api.getTasks().then(setTasks).catch(() => {});
+  }, []);
   const mine = tasks.filter((t) => ["u2", "u3"].includes(t.assignedTo));
   return (
     <div>

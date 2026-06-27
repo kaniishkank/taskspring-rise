@@ -1,21 +1,25 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import { ArrowLeft, Calendar, CheckCircle2, MessageSquare, Paperclip, Send, User as UserIcon, XCircle } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/app/page-header";
 import { PriorityBadge, StatusBadge } from "@/components/app/status-badge";
 import { UserAvatar } from "@/components/app/user-avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { tasks, userById } from "@/lib/mock/data";
-import type { Task } from "@/lib/types";
+import { api } from "@/lib/api";
+import type { Task, User } from "@/lib/types";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/tasks/$id")({
-  loader: ({ params }) => {
-    const task = tasks.find((t) => t.id === params.id);
-    if (!task) throw notFound();
-    return { task };
+  loader: async ({ params }) => {
+    try {
+      const task = await api.getTask(params.id);
+      return { task };
+    } catch {
+      throw notFound();
+    }
   },
   notFoundComponent: () => (
     <div className="grid place-items-center py-20 text-center">
@@ -30,8 +34,14 @@ export const Route = createFileRoute("/_app/tasks/$id")({
 
 function TaskDetail() {
   const { task } = Route.useLoaderData() as { task: Task };
-  const assignee = userById(task.assignedTo);
-  const assigner = userById(task.assignedBy);
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    void api.getUsers().then(setUsers).catch(() => {});
+  }, []);
+
+  const assignee = users.find((u) => u.id === task.assignedTo);
+  const assigner = users.find((u) => u.id === task.assignedBy);
 
   return (
     <div>
@@ -85,7 +95,7 @@ function TaskDetail() {
                 {task.comments.length > 0 ? (
                   <ul className="space-y-4">
                     {task.comments.map((c) => {
-                      const u = userById(c.userId);
+                      const u = users.find((user) => user.id === c.userId);
                       return (
                         <li key={c.id} className="flex gap-3">
                           <UserAvatar name={u?.name} size={32} />

@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Bell, CheckCheck, CheckCircle2, Clock, MessageSquareWarning, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/app/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { notifications as seed } from "@/lib/mock/data";
 import { EmptyState } from "@/components/app/empty-state";
 import type { Notification } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/notifications")({
   component: NotificationsPage,
@@ -29,9 +29,22 @@ const toneMap = {
 } as const;
 
 function NotificationsPage() {
-  const [items, setItems] = useState<Notification[]>(seed);
-  const markAll = () => setItems((p) => p.map((n) => ({ ...n, read: true })));
-  const mark = (id: string) => setItems((p) => p.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  const [items, setItems] = useState<Notification[]>([]);
+  useEffect(() => {
+    void api.getNotifications().then(setItems).catch(() => {});
+  }, []);
+  const markAll = async () => {
+    try {
+      await api.markAllNotificationsRead();
+      setItems((p) => p.map((n) => ({ ...n, read: true })));
+    } catch {}
+  };
+  const mark = async (id: string) => {
+    try {
+      await api.markNotificationRead(id);
+      setItems((p) => p.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    } catch {}
+  };
 
   const tabs: { value: string; label: string; filter: (n: Notification) => boolean }[] = [
     { value: "all", label: "All", filter: () => true },
@@ -46,7 +59,7 @@ function NotificationsPage() {
       <PageHeader
         title="Notifications"
         description="Stay on top of every assignment, reminder, and review."
-        actions={<Button variant="outline" onClick={markAll}><CheckCheck className="mr-1.5 h-4 w-4" />Mark all as read</Button>}
+        actions={<Button variant="outline" onClick={() => void markAll()}><CheckCheck className="mr-1.5 h-4 w-4" />Mark all as read</Button>}
       />
       <Tabs defaultValue="all">
         <TabsList>
@@ -65,7 +78,7 @@ function NotificationsPage() {
                     return (
                       <li
                         key={n.id}
-                        onClick={() => mark(n.id)}
+                        onClick={() => void mark(n.id)}
                         className={cn("flex cursor-pointer items-start gap-4 border-b p-4 transition last:border-0 hover:bg-accent/40", !n.read && "bg-primary/5")}
                       >
                         <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-full", toneMap[n.category])}>

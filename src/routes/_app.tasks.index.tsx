@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Download, Filter, Plus, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,17 +14,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { tasks, userById } from "@/lib/mock/data";
-import type { Priority, TaskStatus } from "@/lib/types";
+import { api } from "@/lib/api";
+import type { Priority, TaskStatus, Task, User } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/tasks/")({
   component: TasksPage,
 });
 
 function TasksPage() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<TaskStatus | "all">("all");
   const [priority, setPriority] = useState<Priority | "all">("all");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [taskData, userData] = await Promise.all([api.getTasks(), api.getUsers()]);
+        setTasks(taskData);
+        setUsers(userData);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void load();
+  }, []);
 
   const filtered = useMemo(
     () =>
@@ -38,6 +55,10 @@ function TasksPage() {
       ),
     [q, status, priority],
   );
+
+  if (loading) {
+    return <div className="rounded-xl border bg-card p-8 text-sm text-muted-foreground">Loading tasks…</div>;
+  }
 
   return (
     <div>
@@ -98,7 +119,7 @@ function TasksPage() {
             </thead>
             <tbody>
               {filtered.map((t) => {
-                const u = userById(t.assignedTo);
+                const u = users.find((user) => user.id === t.assignedTo);
                 return (
                   <tr key={t.id} className="border-b last:border-0 hover:bg-accent/40">
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{t.id}</td>

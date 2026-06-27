@@ -11,11 +11,13 @@ import {
   PanelLeftOpen,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
-import { currentUser, notifications } from "@/lib/mock/data";
 import { useClock } from "@/hooks/use-clock";
+import { api } from "@/lib/api";
+import type { Notification, User } from "@/lib/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +38,14 @@ export function Navbar({
   collapsed?: boolean;
 }) {
   const { theme, toggle } = useTheme();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  useEffect(() => {
+    void Promise.all([api.getCurrentUser(), api.getNotifications()]).then(([userData, notificationData]) => {
+      setCurrentUser(userData.user);
+      setNotifications(notificationData);
+    }).catch(() => {});
+  }, []);
   const unread = notifications.filter((n) => !n.read).length;
   const { time, dateShort, day } = useClock();
 
@@ -106,15 +116,15 @@ export function Navbar({
           <DropdownMenuTrigger asChild>
             <button className="ml-1 flex items-center gap-2 rounded-full p-1 pr-2 hover:bg-accent/60">
               <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
-                {currentUser.name.split(" ").map((n) => n[0]).join("")}
+                {currentUser?.name ? currentUser.name.split(" ").map((n) => n[0]).join("") : "U"}
               </span>
-              <span className="hidden text-sm font-medium md:inline">{currentUser.name.split(" ")[0]}</span>
+              <span className="hidden text-sm font-medium md:inline">{currentUser?.name?.split(" ")[0] ?? "User"}</span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="leading-tight">
-              <div className="text-sm">{currentUser.name}</div>
-              <div className="text-xs font-normal text-muted-foreground">{currentUser.email}</div>
+              <div className="text-sm">{currentUser?.name ?? "Loading user"}</div>
+              <div className="text-xs font-normal text-muted-foreground">{currentUser?.email ?? ""}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

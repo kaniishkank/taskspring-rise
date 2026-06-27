@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
+import { useEffect, useState } from "react";
 import { CheckCircle2, MessageSquare, Paperclip, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/app/page-header";
 import { StatusBadge } from "@/components/app/status-badge";
 import { UserAvatar } from "@/components/app/user-avatar";
-import { tasks, userById } from "@/lib/mock/data";
+import { api } from "@/lib/api";
+import type { Task, User } from "@/lib/types";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/submissions")({
@@ -14,8 +16,20 @@ export const Route = createFileRoute("/_app/submissions")({
 });
 
 function SubmissionsPage() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    void Promise.all([api.getTasks(), api.getUsers()])
+      .then(([taskData, userData]) => {
+        setTasks(taskData);
+        setUsers(userData);
+      })
+      .catch(() => {});
+  }, []);
+
   const rows = tasks.flatMap((t) =>
-    t.submissions.map((s) => ({ task: t, sub: s, user: userById(t.assignedTo) })),
+    t.submissions.map((s) => ({ task: t, sub: s, user: users.find((u) => u.id === t.assignedTo) })),
   );
 
   return (

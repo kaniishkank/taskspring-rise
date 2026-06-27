@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pencil, Plus, Search, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/app/page-header";
 import { UserAvatar } from "@/components/app/user-avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { users } from "@/lib/mock/data";
-import type { Role } from "@/lib/types";
+import type { Role, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/_app/users")({
   component: UsersPage,
@@ -21,10 +21,14 @@ const roleLabels: Record<Role, string> = {
 };
 
 function UsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
   const [q, setQ] = useState("");
+  useEffect(() => {
+    void api.getUsers().then(setUsers).catch(() => {});
+  }, []);
   const filtered = users.filter((u) => u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()));
 
-  const renderTable = (list: typeof users) => (
+  const renderTable = (list: User[]) => (
     <div className="rounded-xl border bg-card shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">

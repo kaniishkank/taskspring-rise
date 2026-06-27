@@ -23,18 +23,46 @@ import {
   YAxis,
 } from "recharts";
 import { format, formatDistanceToNow, isBefore, isToday } from "date-fns";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
 import { StatusBadge, PriorityBadge } from "@/components/app/status-badge";
 import { UserAvatar } from "@/components/app/user-avatar";
-import { tasks, userById, notifications } from "@/lib/mock/data";
+import { api } from "@/lib/api";
+import type { Notification, Task, User } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/")({
   component: Dashboard,
 });
 
 function Dashboard() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [taskData, notificationData, userData] = await Promise.all([
+          api.getTasks(),
+          api.getNotifications(),
+          api.getUsers(),
+        ]);
+        setTasks(taskData);
+        setNotifications(notificationData);
+        setUsers(userData);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void load();
+  }, []);
+
   const total = tasks.length;
   const active = tasks.filter((t) => ["assigned", "in_progress"].includes(t.status)).length;
   const pending = tasks.filter((t) => ["submitted", "under_review"].includes(t.status)).length;
@@ -61,13 +89,18 @@ function Dashboard() {
     { month: "Oct", completed: 38, assigned: 42 },
   ];
 
-  const team = [
-    { name: "Priya", tasks: 12, completed: 10 },
-    { name: "Jordan", tasks: 14, completed: 11 },
-    { name: "Sam", tasks: 8, completed: 5 },
-    { name: "Noah", tasks: 9, completed: 8 },
-    { name: "Maya", tasks: 7, completed: 6 },
-  ];
+  const team = useMemo(() => {
+    const getName = (id: string) => users.find((u) => u.id === id)?.name ?? id;
+    return users.slice(0, 5).map((user) => ({
+      name: user.name.split(" ")[0],
+      tasks: tasks.filter((task) => task.assignedTo === user.id).length,
+      completed: tasks.filter((task) => task.assignedTo === user.id && ["completed", "approved"].includes(task.status)).length,
+    }));
+  }, [tasks, users]);
+
+  if (loading) {
+    return <div className="rounded-xl border bg-card p-8 text-sm text-muted-foreground">Loading dashboard…</div>;
+  }
 
   return (
     <div>
@@ -212,7 +245,7 @@ function Dashboard() {
             .filter((t) => !["completed", "approved"].includes(t.status))
             .slice(0, 5)
             .map((t) => {
-              const u = userById(t.assignedTo);
+              const u = users.find((user) => user.id === t.assignedTo);
               const due = new Date(t.dueDate);
               const overdueTask = isBefore(due, new Date()) && !isToday(due);
               return (
