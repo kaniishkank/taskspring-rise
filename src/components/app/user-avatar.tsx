@@ -1,18 +1,31 @@
 import { cn } from "@/lib/utils";
 
-export function UserAvatar({ name, size = 32, className }: { name?: string; size?: number; className?: string }) {
-  const initials = (name ?? "?")
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+export function UserAvatar({
+  name,
+  avatar,
+  size = 32,
+  className,
+}: {
+  name?: string;
+  avatar?: string | null;
+  size?: number;
+  className?: string;
+}) {
+  if (avatar) {
+    return (
+      <img
+        src={avatar}
+        alt={name ?? "Avatar"}
+        className={cn("rounded-full object-cover border border-border shrink-0", className)}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
   return (
     <span
-      className={cn("inline-grid place-items-center rounded-full bg-primary/15 font-semibold text-primary", className)}
-      style={{ width: size, height: size, fontSize: Math.round(size * 0.38) }}
-    >
-      {initials}
-    </span>
+      className={cn("inline-block rounded-full bg-muted border border-muted-foreground/25 shrink-0", className)}
+      style={{ width: size, height: size }}
+    />
   );
 }

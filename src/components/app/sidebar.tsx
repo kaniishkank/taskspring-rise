@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import type { Role, User } from "@/lib/types";
 import logoAsset from "@/assets/mgg-logo.svg.asset.json";
 import { api } from "@/lib/api";
+import { UserAvatar } from "@/components/app/user-avatar";
 
 type Item = { to: string; label: string; icon: typeof LayoutDashboard; roles: Role[] };
 
@@ -110,9 +111,7 @@ export function AppSidebar({
             collapsed ? "justify-center" : "gap-3",
           )}
         >
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
-            {currentUser?.name ? currentUser.name.split(" ").map((n) => n[0]).join("") : "U"}
-          </div>
+          <UserAvatar name={currentUser?.name} avatar={currentUser?.avatar} size={36} />
           {!collapsed && (
             <div className="min-w-0 leading-tight">
               <div className="truncate text-sm font-medium">{currentUser?.name ?? "Loading user"}</div>

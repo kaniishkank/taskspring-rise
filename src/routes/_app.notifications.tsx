@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Bell, CheckCheck, CheckCircle2, Clock, MessageSquareWarning, UserPlus } from "lucide-react";
+import { Bell, CheckCheck, CheckCircle2, Clock, MessageSquareWarning, UserPlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/app/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/app/empty-state";
-import type { Notification } from "@/lib/types";
+import type { Notification, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/notifications")({
   component: NotificationsPage,
@@ -30,20 +31,36 @@ const toneMap = {
 
 function NotificationsPage() {
   const [items, setItems] = useState<Notification[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
   useEffect(() => {
+    void api.getCurrentUser().then((data) => setCurrentUser(data.user)).catch(() => {});
     void api.getNotifications().then(setItems).catch(() => {});
   }, []);
   const markAll = async () => {
     try {
       await api.markAllNotificationsRead();
       setItems((p) => p.map((n) => ({ ...n, read: true })));
-    } catch {}
+      toast.success("All notifications marked as read");
+    } catch {
+      toast.error("Failed to mark notifications read");
+    }
   };
   const mark = async (id: string) => {
     try {
       await api.markNotificationRead(id);
       setItems((p) => p.map((n) => (n.id === id ? { ...n, read: true } : n)));
     } catch {}
+  };
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      await api.deleteNotification(id);
+      setItems((p) => p.filter((n) => n.id !== id));
+      toast.success("Notification deleted");
+    } catch {
+      toast.error("Failed to delete notification");
+    }
   };
 
   const tabs: { value: string; label: string; filter: (n: Notification) => boolean }[] = [
@@ -66,7 +83,9 @@ function NotificationsPage() {
           {tabs.map((t) => <TabsTrigger key={t.value} value={t.value}>{t.label}</TabsTrigger>)}
         </TabsList>
         {tabs.map((t) => {
-          const list = items.filter(t.filter);
+          const list = items
+            .filter((n) => currentUser?.role !== "staff" || n.userId === currentUser?.id)
+            .filter(t.filter);
           return (
             <TabsContent key={t.value} value={t.value}>
               {list.length === 0 ? (
@@ -79,7 +98,10 @@ function NotificationsPage() {
                       <li
                         key={n.id}
                         onClick={() => void mark(n.id)}
-                        className={cn("flex cursor-pointer items-start gap-4 border-b p-4 transition last:border-0 hover:bg-accent/40", !n.read && "bg-primary/5")}
+                        className={cn(
+                          "group flex cursor-pointer items-start gap-4 border-b p-4 transition last:border-0 hover:bg-accent/40",
+                          !n.read && "bg-primary/5"
+                        )}
                       >
                         <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-full", toneMap[n.category])}>
                           <Icon className="h-5 w-5" />
@@ -91,7 +113,16 @@ function NotificationsPage() {
                           </div>
                           <p className="mt-0.5 text-sm text-muted-foreground">{n.message}</p>
                         </div>
-                        {!n.read && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />}
+                        <div className="flex items-center gap-2">
+                          {!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" />}
+                          <button
+                            onClick={(e) => void handleDelete(e, n.id)}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-destructive transition shrink-0"
+                            title="Delete notification"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </li>
                     );
                   })}

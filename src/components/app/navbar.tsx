@@ -9,15 +9,18 @@ import {
   Settings as SettingsIcon,
   PanelLeftClose,
   PanelLeftOpen,
+  X,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme";
 import { useClock } from "@/hooks/use-clock";
 import { api } from "@/lib/api";
-import type { Notification, User } from "@/lib/types";
+import type { Notification, User, Task } from "@/lib/types";
+import { UserAvatar } from "@/components/app/user-avatar";
+import { openMockFile } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,14 +41,75 @@ export function Navbar({
   collapsed?: boolean;
 }) {
   const { theme, toggle } = useTheme();
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [showClock, setShowClock] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+
   useEffect(() => {
-    void Promise.all([api.getCurrentUser(), api.getNotifications()]).then(([userData, notificationData]) => {
+    void Promise.all([
+      api.getCurrentUser(),
+      api.getNotifications(),
+      api.getTasks(),
+      api.getUsers()
+    ]).then(([userData, notificationData, taskData, userDataList]) => {
       setCurrentUser(userData.user);
       setNotifications(notificationData);
+      setTasks(taskData);
+      setUsers(userDataList);
     }).catch(() => {});
   }, []);
+
+  const matchingTasks = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return tasks.filter((t) =>
+      t.title.toLowerCase().includes(query) ||
+      t.id.toLowerCase().includes(query) ||
+      t.description.toLowerCase().includes(query)
+    ).slice(0, 5);
+  }, [tasks, searchQuery]);
+
+  const matchingUsers = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return users.filter((u) =>
+      u.name.toLowerCase().includes(query) ||
+      u.email.toLowerCase().includes(query) ||
+      (u.department && u.department.toLowerCase().includes(query))
+    ).slice(0, 5);
+  }, [users, searchQuery]);
+
+  const matchingFiles = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    const list: { name: string; taskTitle: string; taskId: string }[] = [];
+    tasks.forEach((t) => {
+      if (t.attachments) {
+        t.attachments.forEach((a) => {
+          if (a.name.toLowerCase().includes(query)) {
+            list.push({ name: a.name, taskTitle: t.title, taskId: t.id });
+          }
+        });
+      }
+      if (t.submissions) {
+        t.submissions.forEach((s) => {
+          if (s.files) {
+            s.files.forEach((f) => {
+              if (f.toLowerCase().includes(query)) {
+                list.push({ name: f, taskTitle: t.title, taskId: t.id });
+              }
+            });
+          }
+        });
+      }
+    });
+    return list.filter((f, idx, self) => self.findIndex((x) => x.name === f.name) === idx).slice(0, 5);
+  }, [tasks, searchQuery]);
   const unread = notifications.filter((n) => !n.read).length;
   const { time, dateShort, day } = useClock();
 
@@ -67,19 +131,113 @@ export function Navbar({
       )}
       <div className="relative hidden max-w-md flex-1 md:block">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search tasks, people, files..." className="h-10 pl-9" />
+        <Input
+          placeholder="Search tasks, people, files..."
+          className="h-10 pl-9"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => setSearchFocused(true)}
+          onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+        />
+        {searchFocused && searchQuery.trim().length > 0 && (
+          <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-[400px] overflow-y-auto rounded-lg border border-border bg-popover p-2 shadow-lg backdrop-blur">
+            {matchingTasks.length === 0 && matchingUsers.length === 0 && matchingFiles.length === 0 ? (
+              <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                No matching results found for "{searchQuery}"
+              </div>
+            ) : (
+              <div className="space-y-4 p-1">
+                {matchingTasks.length > 0 && (
+                  <div>
+                    <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Tasks
+                    </div>
+                    <ul className="space-y-0.5">
+                      {matchingTasks.map((t) => (
+                        <li key={t.id}>
+                          <Link
+                            to="/tasks/$id"
+                            params={{ id: t.id }}
+                            className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-accent text-sm"
+                          >
+                            <span className="truncate font-medium text-foreground">{t.title}</span>
+                            <span className="font-mono text-[10px] text-muted-foreground">{t.id}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {matchingUsers.length > 0 && (
+                  <div>
+                    <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      People
+                    </div>
+                    <ul className="space-y-0.5">
+                      {matchingUsers.map((u) => (
+                        <li key={u.id} className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-foreground">{u.name}</span>
+                            <span className="text-xs text-muted-foreground">({u.email})</span>
+                          </div>
+                          <span className="text-[10px] rounded bg-muted px-1.5 py-0.5 text-muted-foreground capitalize">
+                            {u.role.replace("_", " ")}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {matchingFiles.length > 0 && (
+                  <div>
+                    <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Files
+                    </div>
+                    <ul className="space-y-0.5">
+                      {matchingFiles.map((f) => (
+                        <li key={f.name}>
+                          <button
+                            type="button"
+                            onClick={() => openMockFile(f.name)}
+                            className="flex w-full items-center justify-between rounded-md px-2 py-1.5 hover:bg-accent text-sm text-left"
+                          >
+                            <span className="truncate text-foreground hover:underline">{f.name}</span>
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[120px] ml-2">
+                              Task: {f.taskTitle}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div className="ml-auto flex items-center gap-1">
-        <div className="mr-2 hidden items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-1.5 text-right md:flex">
-          <div className="leading-tight">
-            <div className="font-mono text-sm font-semibold tracking-wider text-foreground">
-              {time}
+        {showClock && (
+          <div className="relative mr-2 hidden items-center gap-2 rounded-lg border border-border bg-muted/40 pl-3 pr-8 py-1.5 text-right md:flex group">
+            <div className="leading-tight">
+              <div className="font-mono text-sm font-semibold tracking-wider text-foreground">
+                {time}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {day} • {dateShort}
+              </div>
             </div>
-            <div className="text-[10px] text-muted-foreground">
-              {day} • {dateShort}
-            </div>
+            <button
+              onClick={() => setShowClock(false)}
+              className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground opacity-0 hover:bg-accent hover:text-foreground group-hover:opacity-100 transition-opacity"
+              title="Hide clock"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
           </div>
-        </div>
+        )}
         <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
@@ -115,9 +273,7 @@ export function Navbar({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="ml-1 flex items-center gap-2 rounded-full p-1 pr-2 hover:bg-accent/60">
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
-                {currentUser?.name ? currentUser.name.split(" ").map((n) => n[0]).join("") : "U"}
-              </span>
+              <UserAvatar name={currentUser?.name} avatar={currentUser?.avatar} size={32} />
               <span className="hidden text-sm font-medium md:inline">{currentUser?.name?.split(" ")[0] ?? "User"}</span>
             </button>
           </DropdownMenuTrigger>
@@ -127,16 +283,19 @@ export function Navbar({
               <div className="text-xs font-normal text-muted-foreground">{currentUser?.email ?? ""}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/settings"><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
+            <DropdownMenuItem onClick={() => void navigate({ to: "/settings" })}>
+              <UserIcon className="mr-2 h-4 w-4" />Profile
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/settings"><SettingsIcon className="mr-2 h-4 w-4" />Settings</Link>
+            <DropdownMenuItem onClick={() => void navigate({ to: "/settings" })}>
+              <SettingsIcon className="mr-2 h-4 w-4" />Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {
-                try { window.localStorage.removeItem("mgg_user"); } catch {}
+                try {
+                  window.localStorage.removeItem("mgg_user");
+                  window.sessionStorage.removeItem("mgg_deadline_alert_shown");
+                } catch {}
                 window.location.href = "/login";
               }}
             >

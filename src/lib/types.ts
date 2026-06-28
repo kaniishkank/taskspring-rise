@@ -15,6 +15,7 @@ export interface User {
   email: string;
   role: Role;
   avatar?: string;
+  password?: string;
   department?: string;
   active: boolean;
 }

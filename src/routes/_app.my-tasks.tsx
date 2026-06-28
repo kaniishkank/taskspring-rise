@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { PriorityBadge, StatusBadge } from "@/components/app/status-badge";
 import { EmptyState } from "@/components/app/empty-state";
 import { api } from "@/lib/api";
-import type { Task } from "@/lib/types";
+import type { Task, User } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/my-tasks")({
   component: MyTasks,
@@ -14,10 +14,32 @@ export const Route = createFileRoute("/_app/my-tasks")({
 
 function MyTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    void api.getTasks().then(setTasks).catch(() => {});
+    async function load() {
+      try {
+        const [taskData, userData] = await Promise.all([
+          api.getTasks(),
+          api.getCurrentUser(),
+        ]);
+        setTasks(taskData);
+        setCurrentUser(userData.user);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    void load();
   }, []);
-  const mine = tasks.filter((t) => ["u2", "u3"].includes(t.assignedTo));
+
+  if (loading) {
+    return <div className="rounded-xl border bg-card p-8 text-sm text-muted-foreground">Loading tasks…</div>;
+  }
+
+  const mine = tasks.filter((t) => currentUser && t.assignedTo === currentUser.id);
   return (
     <div>
       <PageHeader title="My tasks" description="Tasks assigned to you across all projects." />

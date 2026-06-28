@@ -10,6 +10,24 @@ import type { Role, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+
 export const Route = createFileRoute("/_app/users")({
   component: UsersPage,
 });
@@ -23,10 +41,109 @@ const roleLabels: Record<Role, string> = {
 function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [q, setQ] = useState("");
+  
+  // Dialog visibility
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  // Form states
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<Role>("staff");
+  const [department, setDepartment] = useState("");
+  const [active, setActive] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const loadUsers = async () => {
+    try {
+      const data = await api.getUsers();
+      setUsers(data);
+    } catch {
+      toast.error("Failed to load users");
+    }
+  };
+
   useEffect(() => {
-    void api.getUsers().then(setUsers).catch(() => {});
+    void loadUsers();
   }, []);
-  const filtered = users.filter((u) => u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()));
+
+  const filtered = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(q.toLowerCase()) ||
+      u.email.toLowerCase().includes(q.toLowerCase())
+  );
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim()) {
+      toast.error("Please fill in Name and Email");
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.createUser({ name, email, role, department, active });
+      toast.success("User added successfully");
+      setIsAddOpen(false);
+      setName("");
+      setEmail("");
+      setRole("staff");
+      setDepartment("");
+      setActive(true);
+      void loadUsers();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to add user");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSaving(true);
+    try {
+      await api.updateUser(editingUser.id, { name, email, role, department, active });
+      toast.success("User updated successfully");
+      setIsEditOpen(false);
+      void loadUsers();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update user");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleActive = async (u: User) => {
+    try {
+      await api.updateUser(u.id, { active: !u.active });
+      toast.success(`User ${u.name} is now ${!u.active ? "Active" : "Disabled"}`);
+      void loadUsers();
+    } catch {
+      toast.error("Failed to update user status");
+    }
+  };
+
+  const openAdd = () => {
+    setName("");
+    setEmail("");
+    setRole("staff");
+    setDepartment("");
+    setActive(true);
+    setIsAddOpen(true);
+  };
+
+  const openEdit = (u: User) => {
+    setEditingUser(u);
+    setName(u.name);
+    setEmail(u.email);
+    setRole(u.role);
+    setDepartment(u.department ?? "");
+    setActive(u.active);
+    setIsEditOpen(true);
+  };
 
   const renderTable = (list: User[]) => (
     <div className="rounded-xl border bg-card shadow-sm">
@@ -54,7 +171,7 @@ function UsersPage() {
                 <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
                 <td className="px-4 py-3 text-muted-foreground">{u.department}</td>
                 <td className="px-4 py-3">
-                  <span className="rounded-md border bg-muted/40 px-2 py-0.5 text-xs capitalize">{roleLabels[u.role]}</span>
+                  <span className="rounded-md border bg-muted/40 px-2 py-0.5 text-xs capitalize">{roleLabels[u.role] ?? u.role}</span>
                 </td>
                 <td className="px-4 py-3">
                   <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs", u.active ? "bg-success/15 text-success" : "bg-muted text-muted-foreground")}>
@@ -64,8 +181,10 @@ function UsersPage() {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <div className="inline-flex gap-1">
-                    <Button variant="ghost" size="icon"><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon"><UserMinus className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(u)} title="Edit user"><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => void handleToggleActive(u)} title={u.active ? "Disable user" : "Enable user"} className={cn(u.active ? "text-muted-foreground hover:text-destructive" : "text-success hover:text-success/80")}>
+                      <UserMinus className="h-4 w-4" />
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -81,7 +200,7 @@ function UsersPage() {
       <PageHeader
         title="User management"
         description="Manage managers, staff and roles."
-        actions={<Button><Plus className="mr-1.5 h-4 w-4" />Add user</Button>}
+        actions={<Button onClick={openAdd}><Plus className="mr-1.5 h-4 w-4" />Add user</Button>}
       />
       <div className="mb-4 relative max-w-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -97,6 +216,90 @@ function UsersPage() {
         <TabsContent value="managers">{renderTable(filtered.filter((u) => u.role === "manager" || u.role === "super_admin"))}</TabsContent>
         <TabsContent value="staff">{renderTable(filtered.filter((u) => u.role === "staff"))}</TabsContent>
       </Tabs>
+
+      {/* Add User Dialog */}
+      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add User</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => void handleAddUser(e)} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="add-name">Name *</Label>
+              <Input id="add-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. John Doe" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-email">Email *</Label>
+              <Input id="add-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. john@acme.co" />
+            </div>
+            <div className="space-y-2">
+              <Label>Role *</Label>
+              <Select value={role} onValueChange={(v) => setRole(v as Role)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-dept">Department</Label>
+              <Input id="add-dept" value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="e.g. Engineering" />
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <Checkbox id="add-active" checked={active} onCheckedChange={(c) => setActive(c === true)} />
+              <Label htmlFor="add-active" className="cursor-pointer">Active user account</Label>
+            </div>
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Create User"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => void handleEditUser(e)} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Name *</Label>
+              <Input id="edit-name" required value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email *</Label>
+              <Input id="edit-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Role *</Label>
+              <Select value={role} onValueChange={(v) => setRole(v as Role)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-dept">Department</Label>
+              <Input id="edit-dept" value={department} onChange={(e) => setDepartment(e.target.value)} />
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <Checkbox id="edit-active" checked={active} onCheckedChange={(c) => setActive(c === true)} />
+              <Label htmlFor="edit-active" className="cursor-pointer">Active user account</Label>
+            </div>
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

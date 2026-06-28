@@ -29,10 +29,19 @@ router.post("/", async (req, res) => {
 });
 
 router.put("/:id", async (req, res) => {
-  const { name, email, department, active } = req.body;
+  const { name, email, department, active, avatar, password } = req.body;
+  
+  const data: any = {};
+  if (name !== undefined) data.name = name;
+  if (email !== undefined) data.email = email;
+  if (department !== undefined) data.department = department;
+  if (active !== undefined) data.active = active;
+  if (avatar !== undefined) data.avatar = avatar;
+  if (password !== undefined) data.password = password;
+
   const user = await db.user.update({
     where: { id: req.params.id },
-    data: { name, email, department, active },
+    data,
   });
   res.json(user);
 });

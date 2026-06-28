@@ -40,19 +40,22 @@ function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const [taskData, notificationData, userData] = await Promise.all([
+        const [taskData, notificationData, userData, currentData] = await Promise.all([
           api.getTasks(),
           api.getNotifications(),
           api.getUsers(),
+          api.getCurrentUser(),
         ]);
         setTasks(taskData);
         setNotifications(notificationData);
         setUsers(userData);
+        setCurrentUser(currentData.user);
       } catch (error) {
         console.error(error);
       } finally {
@@ -79,15 +82,31 @@ function Dashboard() {
     { name: "Rejected", value: tasks.filter((t) => t.status === "rejected").length, color: "var(--destructive)" },
   ];
 
-  const monthly = [
-    { month: "Apr", completed: 18, assigned: 24 },
-    { month: "May", completed: 22, assigned: 26 },
-    { month: "Jun", completed: 28, assigned: 31 },
-    { month: "Jul", completed: 25, assigned: 30 },
-    { month: "Aug", completed: 34, assigned: 38 },
-    { month: "Sep", completed: 41, assigned: 44 },
-    { month: "Oct", completed: 38, assigned: 42 },
-  ];
+  const monthly = useMemo(() => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const now = new Date();
+    const dataMap: Record<string, { month: string; completed: number; assigned: number }> = {};
+    
+    // Initialize past 6 months
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const mLabel = months[d.getMonth()];
+      dataMap[mLabel] = { month: mLabel, completed: 0, assigned: 0 };
+    }
+
+    tasks.forEach((t) => {
+      const date = new Date(t.createdAt);
+      const mLabel = months[date.getMonth()];
+      if (dataMap[mLabel]) {
+        dataMap[mLabel].assigned++;
+        if (["completed", "approved"].includes(t.status)) {
+          dataMap[mLabel].completed++;
+        }
+      }
+    });
+
+    return Object.values(dataMap);
+  }, [tasks]);
 
   const team = useMemo(() => {
     const getName = (id: string) => users.find((u) => u.id === id)?.name ?? id;
@@ -105,21 +124,23 @@ function Dashboard() {
   return (
     <div>
       <PageHeader
-        title="Manager dashboard"
-        description="Overview of tasks across your team this week."
+        title={currentUser?.role === "staff" ? "My dashboard" : "Manager dashboard"}
+        description={currentUser?.role === "staff" ? `Overview of ${currentUser?.name ?? "your"}'s tasks and upcoming deadlines.` : "Overview of tasks across your team this week."}
         actions={
-          <Button asChild>
-            <Link to="/tasks/new"><Plus className="mr-1.5 h-4 w-4" />New task</Link>
-          </Button>
+          currentUser?.role !== "staff" && (
+            <Button asChild>
+              <Link to="/tasks/new"><Plus className="mr-1.5 h-4 w-4" />New task</Link>
+            </Button>
+          )
         }
       />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
-        <StatCard label="Total tasks" value={total} icon={ListChecks} tone="primary" delta={{ value: "+12%", positive: true }} />
-        <StatCard label="Active" value={active} icon={Activity} tone="info" delta={{ value: "+3", positive: true }} />
+        <StatCard label="Total tasks" value={total} icon={ListChecks} tone="primary" />
+        <StatCard label="Active" value={active} icon={Activity} tone="info" />
         <StatCard label="Pending review" value={pending} icon={Timer} tone="warning" />
-        <StatCard label="Overdue" value={overdue} icon={AlertTriangle} tone="danger" delta={{ value: "-1", positive: true }} />
-        <StatCard label="Completed" value={completed} icon={CheckCircle2} tone="success" delta={{ value: "+8%", positive: true }} />
+        <StatCard label="Overdue" value={overdue} icon={AlertTriangle} tone="danger" />
+        <StatCard label="Completed" value={completed} icon={CheckCircle2} tone="success" />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -187,47 +208,77 @@ function Dashboard() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border bg-card p-5 shadow-sm lg:col-span-2">
-          <h3 className="text-base font-semibold">Team performance</h3>
-          <p className="text-xs text-muted-foreground">Assigned vs completed by team member</p>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={team}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={12} />
-                <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--popover)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                  }}
-                />
-                <Bar dataKey="tasks" fill="var(--muted-foreground)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="completed" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        <div className="rounded-xl border bg-card p-5 shadow-sm">
-          <h3 className="text-base font-semibold">Recent activity</h3>
-          <ul className="mt-4 space-y-4">
-            {notifications.slice(0, 5).map((n) => (
-              <li key={n.id} className="flex gap-3">
-                <span className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
-                  <Activity className="h-4 w-4" />
-                </span>
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">{n.title}</div>
-                  <div className="line-clamp-2 text-xs text-muted-foreground">{n.message}</div>
-                  <div className="mt-0.5 text-[11px] text-muted-foreground">
-                    {formatDistanceToNow(new Date(n.at), { addSuffix: true })}
+        {currentUser?.role !== "staff" ? (
+          <>
+            <div className="rounded-xl border bg-card p-5 shadow-sm lg:col-span-2">
+              <h3 className="text-base font-semibold">Team performance</h3>
+              <p className="text-xs text-muted-foreground">Assigned vs completed by team member</p>
+              <div className="mt-4 h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={team}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={12} />
+                    <YAxis stroke="var(--muted-foreground)" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{
+                        background: "var(--popover)",
+                        border: "1px solid var(--border)",
+                        borderRadius: 8,
+                      }}
+                    />
+                    <Bar dataKey="tasks" fill="var(--muted-foreground)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="completed" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div className="rounded-xl border bg-card p-5 shadow-sm">
+              <h3 className="text-base font-semibold">Recent activity</h3>
+              <ul className="mt-4 space-y-4">
+                {notifications
+                  .filter((n) => currentUser?.role !== "staff" || n.userId === currentUser?.id)
+                  .slice(0, 5)
+                  .map((n) => (
+                  <li key={n.id} className="flex gap-3">
+                    <span className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
+                      <Activity className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{n.title}</div>
+                      <div className="line-clamp-2 text-xs text-muted-foreground">{n.message}</div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">
+                        {formatDistanceToNow(new Date(n.at), { addSuffix: true })}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
+        ) : (
+          <div className="rounded-xl border bg-card p-5 shadow-sm lg:col-span-3">
+            <h3 className="text-base font-semibold">Recent activity</h3>
+            <ul className="mt-4 space-y-4">
+              {notifications
+                .filter((n) => currentUser?.role !== "staff" || n.userId === currentUser?.id)
+                .slice(0, 5)
+                .map((n) => (
+                <li key={n.id} className="flex gap-3">
+                  <span className="mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/12 text-primary">
+                    <Activity className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{n.title}</div>
+                    <div className="line-clamp-2 text-xs text-muted-foreground">{n.message}</div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">
+                      {formatDistanceToNow(new Date(n.at), { addSuffix: true })}
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="mt-6 rounded-xl border bg-card shadow-sm">
@@ -243,6 +294,7 @@ function Dashboard() {
         <ul className="divide-y">
           {tasks
             .filter((t) => !["completed", "approved"].includes(t.status))
+            .filter((t) => currentUser?.role !== "staff" || t.assignedTo === currentUser?.id)
             .slice(0, 5)
             .map((t) => {
               const u = users.find((user) => user.id === t.assignedTo);
@@ -263,7 +315,7 @@ function Dashboard() {
                     <PriorityBadge priority={t.priority} />
                     <StatusBadge status={t.status} />
                     <div className="hidden items-center gap-2 md:flex">
-                      <UserAvatar name={u?.name} size={28} />
+                      <UserAvatar name={u?.name} avatar={u?.avatar} size={28} />
                       <span className="text-sm">{u?.name}</span>
                     </div>
                   </Link>

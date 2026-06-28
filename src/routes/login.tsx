@@ -7,19 +7,20 @@ import { Label } from "@/components/ui/label";
 import { useClock } from "@/hooks/use-clock";
 import logoAsset from "@/assets/mgg-logo.svg.asset.json";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-type Role = "Principal" | "Administrator" | "Teacher" | "Staff";
+import type { Role } from "@/lib/types";
 
 function resolveRole(id: string): { role: Role; name: string } {
   const lower = id.trim().toLowerCase();
-  if (lower === "principal01") return { role: "Principal", name: "Dr. R. Kapoor" };
-  if (lower === "admin01") return { role: "Administrator", name: "Anita Sharma" };
-  if (lower === "teacher01") return { role: "Teacher", name: "Vikram Singh" };
-  return { role: "Staff", name: id ? id.charAt(0).toUpperCase() + id.slice(1) : "Staff Member" };
+  if (lower === "principal@mgg.edu.in" || lower === "principal01") return { role: "manager", name: "Dr. R. Kapoor" };
+  if (lower === "admin@mgg.edu.in" || lower === "admin01") return { role: "manager", name: "Anita Sharma" };
+  if (lower === "vikram@mgg.edu.in" || lower === "teacher01") return { role: "manager", name: "Vikram Singh" };
+  return { role: "staff", name: id ? id.split("@")[0].charAt(0).toUpperCase() + id.split("@")[0].slice(1) : "Staff Member" };
 }
 
 function LoginPage() {
@@ -37,13 +38,11 @@ function LoginPage() {
     try {
       const response = await api.login(loginId, password);
       window.localStorage.setItem("mgg_user", JSON.stringify({ id: response.user.id, role: response.user.role, name: response.user.name, token: response.token }));
+      toast.success(`Welcome back, ${response.user.name}!`);
       navigate({ to: "/" });
-    } catch {
-      const { role, name } = resolveRole(loginId);
-      try {
-        window.localStorage.setItem("mgg_user", JSON.stringify({ id: loginId, role, name }));
-      } catch {}
-      navigate({ to: "/" });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Invalid credentials. Access Denied.");
     } finally {
       setLoading(false);
     }
@@ -51,13 +50,7 @@ function LoginPage() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-blue-50 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      {/* Top-right prominent clock */}
-      <div className="absolute right-4 top-4 z-10 rounded-2xl border border-border bg-background/70 px-4 py-3 text-right shadow-lg backdrop-blur md:right-8 md:top-8 md:px-6 md:py-4">
-        <div className="font-mono text-2xl font-bold tracking-wider text-primary md:text-3xl">
-          {time}
-        </div>
-        <div className="text-xs text-muted-foreground md:text-sm">{dateLong}</div>
-      </div>
+
 
       {/* Ambient decorative blobs */}
       <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-blue-400/20 blur-3xl" />
@@ -75,14 +68,10 @@ function LoginPage() {
 
           <div className="rounded-2xl border border-border bg-card/90 p-6 shadow-2xl backdrop-blur-sm md:p-8">
             <div className="mb-6 flex flex-col items-center gap-3">
-              <img
-                src={logoAsset.url}
-                alt="Mahatma Global Gateway"
-                className="h-20 w-20 rounded-full shadow-md ring-2 ring-primary/20"
-              />
+              <div className="h-20 w-20 rounded-full bg-muted border border-muted-foreground/25 shadow-md ring-2 ring-primary/20 shrink-0" />
               <div className="text-center">
                 <h1 className="text-xl font-bold text-foreground">
-                  Mahatma Global Gateway
+                  Mahatma Global Gateway Demo
                 </h1>
                 <p className="text-xs uppercase tracking-widest text-muted-foreground">
                   School Management Portal
@@ -100,7 +89,7 @@ function LoginPage() {
                 <Input
                   id="loginId"
                   type="text"
-                  placeholder="e.g. principal01"
+                  placeholder="e.g. principal@mgg.edu.in"
                   autoComplete="username"
                   value={loginId}
                   onChange={(e) => setLoginId(e.target.value)}
@@ -137,12 +126,7 @@ function LoginPage() {
                 {loading ? "Signing in…" : "Sign in"}
               </Button>
 
-              <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
-                Try{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">principal01</code>,{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">admin01</code>, or{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5 text-foreground">teacher01</code>
-              </p>
+
             </form>
           </div>
         </div>
