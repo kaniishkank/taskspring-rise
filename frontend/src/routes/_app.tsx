@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
+import { Outlet, createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app/sidebar";
 import { Navbar } from "@/components/app/navbar";
@@ -18,6 +18,14 @@ export const Route = createFileRoute("/_app")({
 function AppLayout() {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!window.localStorage.getItem("mgg_user")) {
+      navigate({ to: "/login", replace: true });
+    }
+  }, [navigate]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -69,6 +77,10 @@ function AppLayout() {
 
     void checkDeadlines();
   }, []);
+
+  if (typeof window !== "undefined" && !window.localStorage.getItem("mgg_user")) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-background text-foreground">

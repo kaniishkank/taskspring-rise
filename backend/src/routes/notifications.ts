@@ -1,23 +1,19 @@
 import { Router } from "express";
 import { db } from "../db.js";
+import { authenticate, AuthRequest } from "../middleware/auth.js";
 
 const router = Router();
+router.use(authenticate as any);
 
-async function getAuthUser(req: any) {
-  const userId = req.headers["x-user-id"];
-  const userEmail = req.headers["x-user-email"];
-
-  if (typeof userId === "string" && userId) {
-    const user = await db.user.findUnique({ where: { id: userId } });
-    if (user) return user;
-  }
-  if (typeof userEmail === "string" && userEmail) {
-    const user = await db.user.findUnique({ where: { email: userEmail } });
-    if (user) return user;
-  }
-  return null;
+async function getAuthUser(req: AuthRequest) {
+  if (!req.user?.id) return null;
+  return await db.user.findUnique({ where: { id: req.user.id } });
 }
 
+/**
+ * @route GET /
+ * @desc Fetches notifications. Managers/Admins see all notifications. Staff only see their own.
+ */
 router.get("/", async (req, res) => {
   const where: any = {};
 

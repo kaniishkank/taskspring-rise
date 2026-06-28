@@ -28,6 +28,12 @@ function SettingsPage() {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
 
+  // Notification form state
+  const [notifyAssignments, setNotifyAssignments] = useState(true);
+  const [notifyDeadlines, setNotifyDeadlines] = useState(true);
+  const [notifyApprovals, setNotifyApprovals] = useState(true);
+  const [notifyWeekly, setNotifyWeekly] = useState(true);
+
   // Security form state
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -43,6 +49,10 @@ function SettingsPage() {
           setEmail(data.user.email);
           setDepartment(data.user.department || "");
           setAvatar(data.user.avatar || null);
+          setNotifyAssignments(data.user.notifyAssignments ?? true);
+          setNotifyDeadlines(data.user.notifyDeadlines ?? true);
+          setNotifyApprovals(data.user.notifyApprovals ?? true);
+          setNotifyWeekly(data.user.notifyWeekly ?? true);
         }
       })
       .catch(() => {});
@@ -111,6 +121,23 @@ function SettingsPage() {
       toast.error(err.message || "Failed to update profile");
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    if (!currentUser) return;
+    try {
+      const updatedUser = await api.updateUser(currentUser.id, {
+        notifyAssignments,
+        notifyDeadlines,
+        notifyApprovals,
+        notifyWeekly,
+      });
+      setCurrentUser(updatedUser);
+      window.localStorage.setItem("mgg_user", JSON.stringify(updatedUser));
+      toast.success("Notification preferences saved successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save notification preferences");
     }
   };
 
@@ -211,19 +238,24 @@ function SettingsPage() {
         <TabsContent value="notifications">
           <div className="rounded-xl border bg-card p-6 shadow-sm">
             {[
-              { label: "New task assignments", desc: "Email me when a task is assigned to me." },
-              { label: "Deadline reminders", desc: "Reminders 24 hours before a task is due." },
-              { label: "Submission approvals", desc: "Tell me when a submission is approved." },
-              { label: "Weekly digest", desc: "A Monday morning summary of team activity." },
+              { id: "assignments", label: "New task assignments", desc: "Email me when a task is assigned to me.", value: notifyAssignments, onChange: setNotifyAssignments },
+              { id: "deadlines", label: "Deadline reminders", desc: "Reminders 24 hours before a task is due.", value: notifyDeadlines, onChange: setNotifyDeadlines },
+              { id: "approvals", label: "Submission approvals", desc: "Tell me when a submission is approved.", value: notifyApprovals, onChange: setNotifyApprovals },
+              { id: "weekly", label: "Weekly digest", desc: "A Monday morning summary of team activity.", value: notifyWeekly, onChange: setNotifyWeekly },
             ].map((row) => (
-              <div key={row.label} className="flex items-center justify-between border-b py-4 last:border-0">
+              <div key={row.id} className="flex items-center justify-between border-b py-4 last:border-0">
                 <div>
                   <div className="text-sm font-medium">{row.label}</div>
                   <div className="text-xs text-muted-foreground">{row.desc}</div>
                 </div>
-                <Switch defaultChecked />
+                <Switch checked={row.value} onCheckedChange={row.onChange} />
               </div>
             ))}
+            <div className="mt-6 flex justify-end">
+              <Button type="button" onClick={() => void handleSaveNotifications()}>
+                <Save className="mr-1.5 h-4 w-4" /> Save Preferences
+              </Button>
+            </div>
           </div>
         </TabsContent>
 

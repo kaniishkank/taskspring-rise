@@ -9,11 +9,21 @@ import notificationsRouter from "./routes/notifications.js";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+const allowedOrigins = [
+  "http://localhost:8080",
+  process.env.FRONTEND_URL
+].filter(Boolean) as string[];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
+
 app.use(express.json());
 
 app.use((req, res, next) => {
-  console.log(`[REQUEST] ${req.method} ${req.url} - x-user-id: ${req.headers["x-user-id"]}`);
+  console.log(`[REQUEST] ${req.method} ${req.url}`);
   next();
 });
 

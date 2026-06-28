@@ -29,6 +29,7 @@ const COLUMNS: { value: TaskStatus; label: string; tone: string }[] = [
   { value: "submitted", label: "Submitted", tone: "border-t-2 border-t-amber-500 bg-amber-500/5" },
   { value: "under_review", label: "Under Review", tone: "border-t-2 border-t-purple-500 bg-purple-500/5" },
   { value: "approved", label: "Approved", tone: "border-t-2 border-t-emerald-500 bg-emerald-500/5" },
+  { value: "completed", label: "Completed", tone: "border-t-2 border-t-blue-600 bg-blue-600/5" },
   { value: "rejected", label: "Rejected", tone: "border-t-2 border-t-destructive bg-destructive/5" },
 ];
 

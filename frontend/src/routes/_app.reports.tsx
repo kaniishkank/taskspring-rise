@@ -14,12 +14,16 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_app/reports")({
   beforeLoad: () => {
     if (typeof window !== "undefined") {
+      let isStaff = false;
       try {
         const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
         if (user && user.role === "staff") {
-          throw redirect({ to: "/" });
+          isStaff = true;
         }
       } catch {}
+      if (isStaff) {
+        throw redirect({ to: "/" });
+      }
     }
   },
   component: ReportsPage,

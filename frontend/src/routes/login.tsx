@@ -13,15 +13,6 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-import type { Role } from "@/lib/types";
-
-function resolveRole(id: string): { role: Role; name: string } {
-  const lower = id.trim().toLowerCase();
-  if (lower === "principal@mgg.edu.in" || lower === "principal01") return { role: "manager", name: "Dr. R. Kapoor" };
-  if (lower === "admin@mgg.edu.in" || lower === "admin01") return { role: "manager", name: "Anita Sharma" };
-  if (lower === "vikram@mgg.edu.in" || lower === "teacher01") return { role: "manager", name: "Vikram Singh" };
-  return { role: "staff", name: id ? id.split("@")[0].charAt(0).toUpperCase() + id.split("@")[0].slice(1) : "Staff Member" };
-}
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -39,7 +30,11 @@ function LoginPage() {
       const response = await api.login(loginId, password);
       window.localStorage.setItem("mgg_user", JSON.stringify({ id: response.user.id, role: response.user.role, name: response.user.name, token: response.token }));
       toast.success(`Welcome back, ${response.user.name}!`);
-      navigate({ to: "/" });
+      if (response.user.role === "manager" || response.user.role === "super_admin") {
+        navigate({ to: "/" });
+      } else {
+        navigate({ to: "/tasks" });
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Invalid credentials. Access Denied.");

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import {
   Activity,
   AlertTriangle,
@@ -33,6 +33,20 @@ import { api } from "@/lib/api";
 import type { Notification, Task, User } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined") {
+      let isStaff = false;
+      try {
+        const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
+        if (user && user.role === "staff") {
+          isStaff = true;
+        }
+      } catch {}
+      if (isStaff) {
+        throw redirect({ to: "/tasks" });
+      }
+    }
+  },
   component: Dashboard,
 });
 
@@ -42,6 +56,17 @@ function Dashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
+      if (user && user.role === "staff") {
+        navigate({ to: "/tasks", replace: true });
+      }
+    } catch {}
+  }, [navigate]);
 
   useEffect(() => {
     async function load() {
@@ -116,6 +141,15 @@ function Dashboard() {
       completed: tasks.filter((task) => task.assignedTo === user.id && ["completed", "approved"].includes(task.status)).length,
     }));
   }, [tasks, users]);
+
+  if (typeof window !== "undefined") {
+    try {
+      const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
+      if (user && user.role === "staff") {
+        return null;
+      }
+    } catch {}
+  }
 
   if (loading) {
     return <div className="rounded-xl border bg-card p-8 text-sm text-muted-foreground">Loading dashboard…</div>;

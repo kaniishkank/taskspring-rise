@@ -31,6 +31,13 @@ const items: Item[] = [
   { to: "/settings", label: "Settings", icon: Settings, roles: ["super_admin", "manager", "staff"] },
 ];
 
+/**
+ * Sidebar navigation component.
+ * Items are conditionally rendered based on the `roles` array matching the current user's role.
+ *
+ * @param onNavigate - Optional callback fired when a nav item is clicked (useful for mobile drawers)
+ * @param collapsed - Visual state determining if sidebar is fully expanded or just showing icons
+ */
 export function AppSidebar({
   onNavigate,
   collapsed = false,

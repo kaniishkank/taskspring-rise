@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { CheckCircle2, MessageSquare, Paperclip, XCircle } from "lucide-react";
@@ -13,6 +13,20 @@ import { toast } from "sonner";
 import { openMockFile } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/submissions")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined") {
+      let isStaff = false;
+      try {
+        const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
+        if (user && user.role === "staff") {
+          isStaff = true;
+        }
+      } catch {}
+      if (isStaff) {
+        throw redirect({ to: "/" });
+      }
+    }
+  },
   component: SubmissionsPage,
 });
 

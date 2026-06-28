@@ -10,10 +10,18 @@ interface CacheEntry {
 const getCache = new Map<string, CacheEntry>();
 const CACHE_TTL = 3000; // 3 seconds TTL for requests caching
 
+/**
+ * Clears the active request cache. Called automatically on mutations (POST/PUT/PATCH/DELETE).
+ */
 export function clearApiCache() {
   getCache.clear();
 }
 
+/**
+ * Core request function wrapping `fetch`.
+ * Implements a simple GET cache and automatically injects authentication headers
+ * based on localStorage.
+ */
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = init.method ?? "GET";
 
@@ -38,9 +46,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
-        if (user) {
-          if (user.id) headers["x-user-id"] = user.id;
-          if (user.email) headers["x-user-email"] = user.email;
+        if (user?.token) {
+          headers["Authorization"] = `Bearer ${user.token}`;
         }
       } catch (err) {
         console.error("Error parsing user from localStorage", err);
@@ -160,7 +167,7 @@ export const api = {
     return request<User[]>('/users');
   },
 
-  async createUser(payload: Partial<User>) {
+  async createUser(payload: Partial<User> & { password?: string }) {
     return request<User>('/users', {
       method: "POST",
       body: JSON.stringify(payload),

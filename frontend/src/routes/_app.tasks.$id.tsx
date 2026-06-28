@@ -2,6 +2,8 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import { ArrowLeft, Calendar, CheckCircle2, MessageSquare, Paperclip, Send, User as UserIcon, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/app/page-header";
@@ -28,6 +30,7 @@ function TaskDetail() {
   const [commentText, setCommentText] = useState("");
   const [submissionNotes, setSubmissionNotes] = useState("");
   const [submissionLink, setSubmissionLink] = useState("");
+  const [submissionFiles, setSubmissionFiles] = useState<{name: string, content: string}[]>([]);
   const [submittingWork, setSubmittingWork] = useState(false);
   const [reviewing, setReviewing] = useState(false);
 
@@ -62,7 +65,7 @@ function TaskDetail() {
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentText.trim() || !currentUser) return;
+    if (!commentText.trim() || !currentUser || !task) return;
     try {
       await api.addComment(task.id, currentUser.id, commentText);
       toast.success("Comment added");
@@ -75,19 +78,20 @@ function TaskDetail() {
 
   const handleSubmitWork = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!submissionNotes.trim() || !currentUser) return;
+    if (!submissionNotes.trim() || !currentUser || !task) return;
     setSubmittingWork(true);
     try {
       await api.createSubmission(task.id, {
         userId: currentUser.id,
         notes: submissionNotes,
-        files: ["proof.png"],
+        files: submissionFiles.map(f => f.content), // Storing base64 strings directly in the JSON array for demo
         links: submissionLink ? [submissionLink] : [],
         status: "submitted",
       });
       toast.success("Proof of work submitted!");
       setSubmissionNotes("");
       setSubmissionLink("");
+      setSubmissionFiles([]);
       void loadTask();
     } catch {
       toast.error("Failed to submit work");
@@ -97,6 +101,7 @@ function TaskDetail() {
   };
 
   const handleReview = async (reviewStatus: "approved" | "rejected" | "changes_requested") => {
+    if (!task) return;
     setReviewing(true);
     const latestSub = task.submissions[task.submissions.length - 1];
     try {
@@ -266,6 +271,35 @@ function TaskDetail() {
                         onChange={(e) => setSubmissionLink(e.target.value)}
                       />
                     </div>
+                    <div>
+                      <Label htmlFor="file">File Upload (Optional, max 1MB)</Label>
+                      <Input
+                        id="file"
+                        type="file"
+                        className="mt-1.5"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 1024 * 1024) {
+                            toast.error("File must be under 1MB");
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            if (typeof reader.result === "string") {
+                              setSubmissionFiles([{ name: file.name, content: reader.result }]);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                      {submissionFiles.length > 0 && (
+                        <div className="mt-2 text-xs text-muted-foreground flex items-center justify-between bg-muted/50 p-2 rounded-md border">
+                          <span className="truncate">{submissionFiles[0].name}</span>
+                          <button type="button" onClick={() => setSubmissionFiles([])} className="text-destructive hover:underline">Remove</button>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex justify-end">
                       <Button type="submit" disabled={submittingWork}>
                         {submittingWork ? "Submitting..." : "Submit Task"}
@@ -338,15 +372,15 @@ function TaskDetail() {
                           <p className="mt-3 text-sm">{s.notes}</p>
                           {s.files && s.files.length > 0 && (
                             <div className="mt-3 flex flex-wrap gap-2">
-                              {s.files.map((f) => (
+                              {s.files.map((f, i) => (
                                 <button
-                                  key={f}
+                                  key={i}
                                   type="button"
-                                  onClick={() => openMockFile(f)}
+                                  onClick={() => f.startsWith('data:') ? window.open(f) : openMockFile(f)}
                                   className="inline-flex items-center gap-1 rounded-md border bg-primary/10 border-primary/20 hover:bg-primary/25 px-2 py-1 text-xs text-primary transition cursor-pointer"
                                 >
                                   <Paperclip className="h-3 w-3 shrink-0" />
-                                  <span>{f}</span>
+                                  <span className="max-w-[150px] truncate">{f.startsWith('data:') ? 'Attachment' : f}</span>
                                 </button>
                               ))}
                             </div>

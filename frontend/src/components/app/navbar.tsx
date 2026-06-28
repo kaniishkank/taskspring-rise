@@ -31,6 +31,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
+/**
+ * Main application navigation bar.
+ * Provides global search, notifications, theme toggle, and user profile dropdown.
+ *
+ * @param onOpenSidebar - Callback to open the mobile sidebar drawer
+ * @param onToggleCollapse - Callback to toggle desktop sidebar collapse state
+ * @param collapsed - Whether the desktop sidebar is currently collapsed
+ */
 export function Navbar({
   onOpenSidebar,
   onToggleCollapse,
@@ -259,12 +267,25 @@ export function Navbar({
             </div>
             <ul className="max-h-80 divide-y overflow-y-auto">
               {notifications.slice(0, 5).map((n) => (
-                <li key={n.id} className="flex gap-3 p-3 hover:bg-accent/40">
+                <li key={n.id} className="group relative flex gap-3 p-3 pr-10 hover:bg-accent/40">
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-muted" : "bg-primary"}`} />
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">{n.title}</div>
                     <div className="line-clamp-2 text-xs text-muted-foreground">{n.message}</div>
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      void api.deleteNotification(n.id).then(() => {
+                        setNotifications((prev) => prev.filter((x) => x.id !== n.id));
+                      });
+                    }}
+                    className="absolute right-2 top-3 rounded p-1 opacity-0 transition-opacity hover:bg-background group-hover:opacity-100"
+                    title="Dismiss notification"
+                  >
+                    <X className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
                 </li>
               ))}
             </ul>

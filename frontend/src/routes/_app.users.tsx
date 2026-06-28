@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Pencil, Plus, Search, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,20 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/users")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined") {
+      let isStaff = false;
+      try {
+        const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
+        if (user && user.role === "staff") {
+          isStaff = true;
+        }
+      } catch {}
+      if (isStaff) {
+        throw redirect({ to: "/" });
+      }
+    }
+  },
   component: UsersPage,
 });
 
@@ -50,6 +64,7 @@ function UsersPage() {
   // Form states
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [role, setRole] = useState<Role>("staff");
   const [department, setDepartment] = useState("");
   const [active, setActive] = useState(true);
@@ -76,13 +91,13 @@ function UsersPage() {
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) {
-      toast.error("Please fill in Name and Email");
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      toast.error("Please fill in Name, Email, and Password");
       return;
     }
     setSaving(true);
     try {
-      await api.createUser({ name, email, role, department, active });
+      await api.createUser({ name, email, role, department, active, password });
       toast.success("User added successfully");
       setIsAddOpen(false);
       setName("");
@@ -129,6 +144,7 @@ function UsersPage() {
   const openAdd = () => {
     setName("");
     setEmail("");
+    setPassword("");
     setRole("staff");
     setDepartment("");
     setActive(true);
@@ -231,6 +247,10 @@ function UsersPage() {
             <div className="space-y-2">
               <Label htmlFor="add-email">Email *</Label>
               <Input id="add-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. john@acme.co" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-password">Temporary Password *</Label>
+              <Input id="add-password" type="text" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="e.g. Welcome123" />
             </div>
             <div className="space-y-2">
               <Label>Role *</Label>

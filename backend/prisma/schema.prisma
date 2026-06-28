@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -20,7 +20,11 @@ model User {
   tasksToDo     Task[]         @relation("AssignedTo")
   comments      Comment[]
   submissions   Submission[]
-  notifications Notification[]
+  notifications     Notification[]
+  notifyAssignments Boolean @default(true)
+  notifyDeadlines   Boolean @default(true)
+  notifyApprovals   Boolean @default(true)
+  notifyWeekly      Boolean @default(true)
 }
 
 model Task {

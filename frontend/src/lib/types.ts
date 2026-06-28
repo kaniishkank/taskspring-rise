@@ -18,6 +18,10 @@ export interface User {
   password?: string;
   department?: string;
   active: boolean;
+  notifyAssignments?: boolean;
+  notifyDeadlines?: boolean;
+  notifyApprovals?: boolean;
+  notifyWeekly?: boolean;
 }
 
 export interface Task {
