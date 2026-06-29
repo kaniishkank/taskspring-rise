@@ -18,17 +18,20 @@ export const Route = createFileRoute("/_app")({
 function AppLayout() {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [isAuth, setIsAuth] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!window.localStorage.getItem("mgg_user")) {
+    if (!window.sessionStorage.getItem("mgg_user")) {
       navigate({ to: "/login", replace: true });
+    } else {
+      setIsAuth(true);
     }
   }, [navigate]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !isAuth) return;
     const alertShown = window.sessionStorage.getItem("mgg_deadline_alert_shown");
     if (alertShown) return;
 
@@ -76,9 +79,9 @@ function AppLayout() {
     };
 
     void checkDeadlines();
-  }, []);
+  }, [isAuth]);
 
-  if (typeof window !== "undefined" && !window.localStorage.getItem("mgg_user")) {
+  if (!isAuth) {
     return null;
   }
 
