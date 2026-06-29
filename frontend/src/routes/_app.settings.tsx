@@ -317,23 +317,31 @@ function SettingsPage() {
             <div className="mt-6 space-y-4">
               <div>
                 <Label htmlFor="ical-link" className="font-semibold text-foreground">iCalendar Subscription URL</Label>
-                <div className="mt-1.5 flex gap-2">
+                <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
                   <Input
                     id="ical-link"
                     readOnly
                     value={`http://localhost:4000/api/tasks/ical/${currentUser?.id}`}
                     className="bg-muted/30 font-mono text-xs select-all flex-1"
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      navigator.clipboard.writeText(`http://localhost:4000/api/tasks/ical/${currentUser?.id}`);
-                      toast.success("iCalendar link copied to clipboard!");
-                    }}
-                  >
-                    Copy Link
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`http://localhost:4000/api/tasks/ical/${currentUser?.id}`);
+                        toast.success("iCalendar link copied to clipboard!");
+                      }}
+                    >
+                      Copy Link
+                    </Button>
+                    <a
+                      href={`webcal://localhost:4000/api/tasks/ical/${currentUser?.id}`}
+                      className="inline-flex items-center justify-center rounded-md text-sm font-semibold transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4"
+                    >
+                      <Calendar className="mr-1.5 h-4 w-4" /> Sync Automatically
+                    </a>
+                  </div>
                 </div>
               </div>
 
