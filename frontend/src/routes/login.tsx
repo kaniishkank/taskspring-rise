@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,11 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined" && window.sessionStorage.getItem("mgg_user")) {
+      throw redirect({ to: "/" });
+    }
+  },
   component: LoginPage,
 });
 
