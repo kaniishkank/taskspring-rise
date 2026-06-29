@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bell, Lock, Palette, Save, User, Upload } from "lucide-react";
+import { Bell, Lock, Palette, Save, User, Upload, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -176,6 +176,7 @@ function SettingsPage() {
           <TabsTrigger value="profile"><User className="mr-1.5 h-4 w-4" />Profile</TabsTrigger>
           <TabsTrigger value="notifications"><Bell className="mr-1.5 h-4 w-4" />Notifications</TabsTrigger>
           <TabsTrigger value="appearance"><Palette className="mr-1.5 h-4 w-4" />Appearance</TabsTrigger>
+          <TabsTrigger value="calendar"><Calendar className="mr-1.5 h-4 w-4" />Calendar Sync</TabsTrigger>
           <TabsTrigger value="security"><Lock className="mr-1.5 h-4 w-4" />Security</TabsTrigger>
         </TabsList>
 
@@ -304,6 +305,48 @@ function SettingsPage() {
               </Button>
             </div>
           </form>
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          <div className="rounded-xl border bg-card p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-foreground">Sync with OS Calendars</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Subscribe to your TaskFlow tasks directly on your Windows, Outlook, Google, or Apple Calendar using the iCalendar (.ics) link below.
+            </p>
+            
+            <div className="mt-6 space-y-4">
+              <div>
+                <Label htmlFor="ical-link" className="font-semibold text-foreground">iCalendar Subscription URL</Label>
+                <div className="mt-1.5 flex gap-2">
+                  <Input
+                    id="ical-link"
+                    readOnly
+                    value={`http://localhost:4000/api/tasks/ical/${currentUser?.id}`}
+                    className="bg-muted/30 font-mono text-xs select-all flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`http://localhost:4000/api/tasks/ical/${currentUser?.id}`);
+                      toast.success("iCalendar link copied to clipboard!");
+                    }}
+                  >
+                    Copy Link
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-muted/30 p-4 border text-xs text-muted-foreground space-y-2">
+                <p className="font-bold text-foreground">How to Subscribe:</p>
+                <ul className="list-disc list-inside space-y-1.5">
+                  <li><strong>Windows Mail & Calendar / Outlook</strong>: Click <em>Add Calendar</em> ➔ <em>Subscribe from web</em> ➔ Paste the link above ➔ Click <em>Import</em>.</li>
+                  <li><strong>Google Calendar</strong>: Click <em>+</em> next to "Other calendars" ➔ <em>From URL</em> ➔ Paste the link ➔ Click <em>Add calendar</em>.</li>
+                  <li><strong>Apple Calendar</strong>: Click <em>File</em> ➔ <em>New Calendar Subscription...</em> ➔ Paste the link ➔ Click <em>Subscribe</em>.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
