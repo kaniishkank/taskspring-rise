@@ -68,12 +68,13 @@ model Submission {
 }
 
 model Notification {
-  id       String   @id @default(cuid())
-  title    String
-  message  String
-  category String
-  read     Boolean  @default(false)
-  at       DateTime @default(now())
-  user     User?    @relation(fields: [userId], references: [id])
-  userId   String?
+  id                String   @id @default(cuid())
+  title             String
+  message           String
+  category          String
+  read              Boolean  @default(false)
+  notifiedOnStartup Boolean  @default(false)
+  at                DateTime @default(now())
+  user              User?    @relation(fields: [userId], references: [id])
+  userId            String?
 }
