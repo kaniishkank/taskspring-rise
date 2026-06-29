@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app")({
   beforeLoad: () => {
-    if (typeof window !== "undefined" && !window.localStorage.getItem("mgg_user")) {
+    if (typeof window !== "undefined" && !window.sessionStorage.getItem("mgg_user")) {
       throw redirect({ to: "/login" });
     }
   },

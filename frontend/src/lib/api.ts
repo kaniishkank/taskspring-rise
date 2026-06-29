@@ -42,7 +42,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   };
 
   if (typeof window !== "undefined") {
-    const userStr = window.localStorage.getItem("mgg_user");
+    const userStr = window.sessionStorage.getItem("mgg_user");
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
@@ -50,7 +50,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
           headers["Authorization"] = `Bearer ${user.token}`;
         }
       } catch (err) {
-        console.error("Error parsing user from localStorage", err);
+        console.error("Error parsing user from sessionStorage", err);
       }
     }
   }

@@ -28,7 +28,7 @@ function LoginPage() {
     setLoading(true);
     try {
       const response = await api.login(loginId, password);
-      window.localStorage.setItem("mgg_user", JSON.stringify({ id: response.user.id, role: response.user.role, name: response.user.name, token: response.token }));
+      window.sessionStorage.setItem("mgg_user", JSON.stringify({ id: response.user.id, role: response.user.role, name: response.user.name, token: response.token }));
       toast.success(`Welcome back, ${response.user.name}!`);
       if (response.user.role === "manager" || response.user.role === "super_admin") {
         navigate({ to: "/" });

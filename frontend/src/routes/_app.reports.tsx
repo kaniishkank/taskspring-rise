@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_app/reports")({
     if (typeof window !== "undefined") {
       let isStaff = false;
       try {
-        const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
+        const user = JSON.parse(window.sessionStorage.getItem("mgg_user") || "{}");
         if (user && user.role === "staff") {
           isStaff = true;
         }

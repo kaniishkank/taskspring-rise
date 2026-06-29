@@ -314,7 +314,7 @@ export function Navbar({
             <DropdownMenuItem
               onClick={() => {
                 try {
-                  window.localStorage.removeItem("mgg_user");
+                  window.sessionStorage.removeItem("mgg_user");
                   window.sessionStorage.removeItem("mgg_deadline_alert_shown");
                 } catch {}
                 window.location.href = "/login";

@@ -85,7 +85,7 @@ function SettingsPage() {
       });
       setAvatar(null);
       setCurrentUser(updatedUser);
-      window.localStorage.setItem("mgg_user", JSON.stringify(updatedUser));
+      window.sessionStorage.setItem("mgg_user", JSON.stringify(updatedUser));
       toast.success("Profile photo removed successfully!");
       setTimeout(() => {
         window.location.reload();
@@ -109,8 +109,8 @@ function SettingsPage() {
       });
 
       setCurrentUser(updatedUser);
-      // Sync local storage so the sidebar, comments, and navigation fetch the updated user instantly
-      window.localStorage.setItem("mgg_user", JSON.stringify(updatedUser));
+      // Sync session storage so the sidebar, comments, and navigation fetch the updated user instantly
+      window.sessionStorage.setItem("mgg_user", JSON.stringify(updatedUser));
       
       toast.success("Profile details updated successfully!");
       // Reload page layout after brief timeout to refresh navbar/sidebar avatar/initials
