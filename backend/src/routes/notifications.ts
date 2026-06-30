@@ -1,8 +1,34 @@
 import { Router } from "express";
 import { db } from "../db.js";
 import { authenticate, AuthRequest } from "../middleware/auth.js";
+import jwt from "jsonwebtoken";
+import { sendPushNotification } from "../services/push.js";
 
 const router = Router();
+
+// Store active SSE connections
+export const sseClients = new Map<string, any[]>();
+
+export function sendNotificationToUser(userId: string, notification: any) {
+  console.log(`[Backend SSE] Attempting to send notification to user ${userId}`);
+  const clients = sseClients.get(userId);
+  if (clients && clients.length > 0) {
+    console.log(`[Backend SSE] Found ${clients.length} active connection(s) for user ${userId}. Emitting event.`);
+    const message = `data: ${JSON.stringify(notification)}\n\n`;
+    clients.forEach(client => {
+      client.write(message);
+      if (typeof client.flush === 'function') client.flush();
+    });
+  } else {
+    console.log(`[Backend SSE] No active connections found for user ${userId}. Notification saved in DB only.`);
+  }
+  
+  // Also trigger Firebase Push
+  console.log(`[Backend Firebase] Triggering push for user ${userId}`);
+  sendPushNotification(userId, notification.title, notification.message).catch(err => {
+    console.error(`[Backend Firebase] Push failed for ${userId}:`, err);
+  });
+}
 
 /**
  * @route GET /startup
@@ -80,12 +106,64 @@ router.get("/startup", async (req, res) => {
   }
 });
 
+/**
+ * @route GET /stream
+ * @desc Server-Sent Events (SSE) stream for real-time notifications
+ * NOTE: This route MUST be before router.use(authenticate) because
+ * the browser's EventSource API cannot send Authorization headers.
+ * Token auth is done manually via query param.
+ */
+router.get("/stream", (req, res) => {
+  const token = req.query.token as string;
+  if (!token) return res.status(401).json({ error: "No token provided" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback-secret-for-dev") as { id: string };
+    const userId = decoded.id;
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+
+    // Send initial heartbeat to confirm connection
+    res.write(":\n\n");
+    if (typeof (res as any).flush === 'function') (res as any).flush();
+
+    // Add this client to the map
+    if (!sseClients.has(userId)) {
+      sseClients.set(userId, []);
+    }
+    sseClients.get(userId)!.push(res);
+    console.log(`[Backend SSE] ✅ Client connected! User: ${userId}. Total: ${sseClients.get(userId)!.length}`);
+
+    // Remove client when connection closes
+    req.on("close", () => {
+      const clients = sseClients.get(userId);
+      if (clients) {
+        const index = clients.indexOf(res);
+        if (index !== -1) clients.splice(index, 1);
+        if (clients.length === 0) sseClients.delete(userId);
+      }
+      console.log(`[Backend SSE] ❌ Client disconnected! User: ${userId}. Remaining: ${sseClients.get(userId)?.length || 0}`);
+    });
+  } catch (error) {
+    console.error("[Backend SSE] Token verification failed:", error);
+    res.status(401).json({ error: "Invalid token" });
+  }
+});
+
 router.use(authenticate as any);
 
 async function getAuthUser(req: AuthRequest) {
   if (!req.user?.id) return null;
   return await db.user.findUnique({ where: { id: req.user.id } });
 }
+
+/**
+ * @route GET /stream (moved above authenticate middleware)
+ * @desc (see above)
+ */
 
 /**
  * @route GET /
@@ -155,6 +233,25 @@ router.delete("/:id", async (req, res) => {
   await db.notification.delete({
     where: { id: req.params.id },
   });
+  res.json({ success: true });
+});
+
+/**
+ * @route POST /subscribe
+ * @desc Saves the Firebase FCM token for the user
+ */
+router.post("/subscribe", async (req, res) => {
+  const { fcmToken } = req.body;
+  if (!fcmToken) return res.status(400).json({ error: "fcmToken is required" });
+
+  const user = await getAuthUser(req as AuthRequest);
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  await db.user.update({
+    where: { id: user.id },
+    data: { fcmToken },
+  });
+
   res.json({ success: true });
 });
 

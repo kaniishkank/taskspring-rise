@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db } from "../db.js";
 import { authenticate, AuthRequest } from "../middleware/auth.js";
+import { sendNotificationToUser } from "./notifications.js";
 
 const router = Router();
 
@@ -205,7 +206,7 @@ router.post("/", async (req, res) => {
   });
 
   try {
-    await db.notification.create({
+    const notification = await db.notification.create({
       data: {
         userId: assignedToId,
         title: "New Task Assigned",
@@ -213,6 +214,7 @@ router.post("/", async (req, res) => {
         category: "assignment",
       },
     });
+    sendNotificationToUser(assignedToId, notification);
   } catch (err) {
     console.error("Failed to create task notification", err);
   }
@@ -292,14 +294,21 @@ router.post("/:id/submissions", async (req, res) => {
   });
 
   try {
-    await db.notification.create({
-      data: {
-        userId: updatedTask.assignedById,
-        title: "Task Submission Received",
-        message: `Task "${updatedTask.title}" has been submitted for review.`,
-        category: "approval",
-      },
-    });
+    console.log(`[Tasks] Submission created. Task assignedById: ${updatedTask.assignedById}, assignedToId: ${updatedTask.assignedToId}`);
+    if (!updatedTask.assignedById) {
+      console.warn("[Tasks] Cannot send submission notification: assignedById is null on this task!");
+    } else {
+      const notification = await db.notification.create({
+        data: {
+          userId: updatedTask.assignedById,
+          title: "Task Submission Received",
+          message: `Staff has submitted task "${updatedTask.title}" for your review.`,
+          category: "approval",
+        },
+      });
+      sendNotificationToUser(updatedTask.assignedById, notification);
+      console.log(`[Tasks] Submission notification sent to manager ${updatedTask.assignedById}`);
+    }
   } catch (err) {
     console.error("Failed to create submission notification", err);
   }
@@ -380,7 +389,7 @@ router.patch("/:id/submissions/:submissionId", async (req, res) => {
   }
 
   try {
-    await db.notification.create({
+    const notification = await db.notification.create({
       data: {
         userId: task.assignedToId,
         title: notificationTitle,
@@ -388,6 +397,7 @@ router.patch("/:id/submissions/:submissionId", async (req, res) => {
         category: notificationCategory,
       },
     });
+    sendNotificationToUser(task.assignedToId, notification);
   } catch (err) {
     console.error("Failed to create review notification", err);
   }

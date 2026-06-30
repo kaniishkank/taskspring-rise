@@ -1,6 +1,6 @@
 import type { Notification, Task, User } from "./types";
 
-const API_BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:4000/api").replace(/\/$/, "");
+export const API_BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:4000/api").replace(/\/$/, "");
 
 interface CacheEntry {
   promise: Promise<any>;
@@ -201,6 +201,13 @@ export const api = {
   async deleteNotification(id: string) {
     return request<{ success: boolean }>(`/notifications/${id}`, {
       method: "DELETE",
+    });
+  },
+
+  async subscribeToPush(fcmToken: string) {
+    return request<{ success: boolean }>('/notifications/subscribe', {
+      method: "POST",
+      body: JSON.stringify({ fcmToken }),
     });
   },
 };

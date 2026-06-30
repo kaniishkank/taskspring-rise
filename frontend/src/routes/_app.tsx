@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app/sidebar";
 import { Navbar } from "@/components/app/navbar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { api } from "@/lib/api";
+import { api, API_BASE } from "@/lib/api";
+import { requestFirebaseNotificationPermission } from "@/lib/firebase";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app")({
@@ -79,6 +80,58 @@ function AppLayout() {
     };
 
     void checkDeadlines();
+  }, [isAuth]);
+
+  // ── SSE + Firebase push (runs independently of deadline check) ──────────
+  useEffect(() => {
+    if (typeof window === "undefined" || !isAuth) return;
+
+    const userStr = window.sessionStorage.getItem("mgg_user");
+    let sse: EventSource | null = null;
+
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        if (user?.token) {
+          console.log("[SSE] Initializing EventSource connection to backend...");
+          sse = new EventSource(`${API_BASE}/notifications/stream?token=${user.token}`);
+
+          sse.onopen = () => {
+            console.log("[SSE] Connection successfully opened!");
+          };
+
+          sse.onerror = (error) => {
+            console.error("[SSE] Connection error:", error);
+          };
+
+          sse.onmessage = (event) => {
+            console.log("[SSE] Raw message received:", event.data);
+            try {
+              if (event.data === ":") return;
+              const data = JSON.parse(event.data);
+              console.log("[SSE] Parsed message data:", data);
+              if (data.title && data.message) {
+                toast(data.title, {
+                  description: data.message,
+                  duration: 8000,
+                });
+              }
+            } catch (err) {
+              console.error("[SSE] Failed to parse SSE message", err, event.data);
+            }
+          };
+
+          console.log("[Firebase] Calling requestFirebaseNotificationPermission()...");
+          void requestFirebaseNotificationPermission();
+        }
+      } catch (err) {
+        console.error("[SSE] Failed to initialize SSE completely", err);
+      }
+    }
+
+    return () => {
+      if (sse) sse.close();
+    };
   }, [isAuth]);
 
   if (!isAuth) {
