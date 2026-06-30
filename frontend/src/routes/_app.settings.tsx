@@ -344,10 +344,9 @@ function SettingsPage() {
                     <Button
                       type="button"
                       onClick={() => {
-                        window.location.href = `${apiBaseUrl}/api/tasks/ical/${currentUser?.id}`;
-                        toast.success("Calendar file downloaded! Just click the downloaded file in your browser to sync it instantly with your OS Calendar.", {
-                          duration: 8000
-                        });
+                        const webcalUrl = `${apiBaseUrl.replace(/^http(s)?:/, "webcal:")}/api/tasks/ical/${currentUser?.id}`;
+                        window.location.href = webcalUrl;
+                        toast.success("Launching your native calendar application...");
                       }}
                     >
                       <Calendar className="mr-1.5 h-4 w-4" /> Sync Automatically
