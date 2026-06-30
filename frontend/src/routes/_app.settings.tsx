@@ -362,20 +362,17 @@ function SettingsPage() {
                     >
                       Copy Link
                     </Button>
-                    <a
-                      href={`${apiBaseUrl.replace(/^http(s)?:/, "webcal:")}/api/tasks/ical/${currentUser?.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center rounded-md text-sm font-semibold transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4"
+                    <Button
+                      type="button"
                       onClick={() => {
-                        // Fallback: initiate a download of the .ics file in case protocol handler is not configured
-                        setTimeout(() => {
-                          window.location.href = `${apiBaseUrl}/api/tasks/ical/${currentUser?.id}`;
-                        }, 1000);
+                        window.location.href = `${apiBaseUrl}/api/tasks/ical/${currentUser?.id}`;
+                        toast.success("Calendar file downloaded! Just click the downloaded file in your browser to sync it instantly with your OS Calendar.", {
+                          duration: 8000
+                        });
                       }}
                     >
                       <Calendar className="mr-1.5 h-4 w-4" /> Sync Automatically
-                    </a>
+                    </Button>
                   </div>
                 </div>
               </div>
