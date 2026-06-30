@@ -211,9 +211,5 @@ export const api = {
     });
   },
 
-  async setupNotifier() {
-    return request<{ success: boolean; message: string }>('/users/setup-notifier', {
-      method: "POST",
-    });
-  },
+
 };
