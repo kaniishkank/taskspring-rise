@@ -38,8 +38,12 @@ function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingSecurity, setSavingSecurity] = useState(false);
+  const [apiBaseUrl, setApiBaseUrl] = useState("http://localhost:4000");
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setApiBaseUrl(`${window.location.protocol}//${window.location.hostname}:4000`);
+    }
     void api
       .getCurrentUser()
       .then((data) => {
@@ -344,7 +348,7 @@ function SettingsPage() {
                   <Input
                     id="ical-link"
                     readOnly
-                    value={`http://localhost:4000/api/tasks/ical/${currentUser?.id}`}
+                    value={`${apiBaseUrl}/api/tasks/ical/${currentUser?.id}`}
                     className="bg-muted/30 font-mono text-xs select-all flex-1"
                   />
                   <div className="flex gap-2">
@@ -352,14 +356,14 @@ function SettingsPage() {
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        navigator.clipboard.writeText(`http://localhost:4000/api/tasks/ical/${currentUser?.id}`);
+                        navigator.clipboard.writeText(`${apiBaseUrl}/api/tasks/ical/${currentUser?.id}`);
                         toast.success("iCalendar link copied to clipboard!");
                       }}
                     >
                       Copy Link
                     </Button>
                     <a
-                      href={`webcal://localhost:4000/api/tasks/ical/${currentUser?.id}`}
+                      href={`${apiBaseUrl.replace(/^http(s)?:/, "webcal:")}/api/tasks/ical/${currentUser?.id}`}
                       className="inline-flex items-center justify-center rounded-md text-sm font-semibold transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4"
                     >
                       <Calendar className="mr-1.5 h-4 w-4" /> Sync Automatically
