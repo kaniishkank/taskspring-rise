@@ -7,8 +7,24 @@ if (-not (Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue)) {
     Start-Sleep -Seconds 12
 }
 
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if ([string]::IsNullOrEmpty($ScriptDir)) {
+    $ScriptDir = Get-Location
+}
+$ConfigPath = Join-Path $ScriptDir "mgg_config.json"
+
 $userId = "taylor@mgg.edu.in"
-$url = "http://localhost:4000/api/notifications/startup?userId=$userId"
+$backendUrl = "http://localhost:4000"
+
+if (Test-Path $ConfigPath) {
+    try {
+        $Config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
+        if ($Config.userId) { $userId = $Config.userId }
+        if ($Config.backendUrl) { $backendUrl = $Config.backendUrl }
+    } catch {}
+}
+
+$url = "$backendUrl/api/notifications/startup?userId=$userId"
 
 try {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12

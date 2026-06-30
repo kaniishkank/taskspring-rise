@@ -38,8 +38,12 @@ function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingSecurity, setSavingSecurity] = useState(false);
+  const [apiBaseUrl, setApiBaseUrl] = useState("http://localhost:4000");
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setApiBaseUrl(`${window.location.protocol}//${window.location.hostname}:4000`);
+    }
     void api
       .getCurrentUser()
       .then((data) => {
@@ -257,6 +261,29 @@ function SettingsPage() {
                 <Save className="mr-1.5 h-4 w-4" /> Save Preferences
               </Button>
             </div>
+
+            <div className="mt-8 border-t pt-6">
+              <h4 className="text-sm font-semibold text-foreground">Windows OS Startup Notifications</h4>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Automatically receive native Windows Toast notifications on your PC desktop for newly assigned and upcoming tasks immediately when you turn on your PC or log in.
+              </p>
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={async () => {
+                    const promise = api.setupNotifier();
+                    toast.promise(promise, {
+                      loading: "Sending installer request to local server...",
+                      success: (data) => data.message,
+                      error: (err) => err.message || "Failed to trigger installer. Make sure the server runs locally on Windows."
+                    });
+                  }}
+                >
+                  <Palette className="mr-1.5 h-4 w-4 rotate-90" /> Register OS Startup Alerts
+                </Button>
+              </div>
+            </div>
           </div>
         </TabsContent>
 
@@ -321,7 +348,7 @@ function SettingsPage() {
                   <Input
                     id="ical-link"
                     readOnly
-                    value={`http://localhost:4000/api/tasks/ical/${currentUser?.id}`}
+                    value={`${apiBaseUrl}/api/tasks/ical/${currentUser?.id}`}
                     className="bg-muted/30 font-mono text-xs select-all flex-1"
                   />
                   <div className="flex gap-2">
@@ -329,18 +356,23 @@ function SettingsPage() {
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        navigator.clipboard.writeText(`http://localhost:4000/api/tasks/ical/${currentUser?.id}`);
+                        navigator.clipboard.writeText(`${apiBaseUrl}/api/tasks/ical/${currentUser?.id}`);
                         toast.success("iCalendar link copied to clipboard!");
                       }}
                     >
                       Copy Link
                     </Button>
-                    <a
-                      href={`webcal://localhost:4000/api/tasks/ical/${currentUser?.id}`}
-                      className="inline-flex items-center justify-center rounded-md text-sm font-semibold transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4"
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        window.location.href = `${apiBaseUrl}/api/tasks/ical/${currentUser?.id}`;
+                        toast.success("Calendar file downloaded! Just click the downloaded file in your browser to sync it instantly with your OS Calendar.", {
+                          duration: 8000
+                        });
+                      }}
                     >
                       <Calendar className="mr-1.5 h-4 w-4" /> Sync Automatically
-                    </a>
+                    </Button>
                   </div>
                 </div>
               </div>

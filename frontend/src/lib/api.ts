@@ -210,4 +210,10 @@ export const api = {
       body: JSON.stringify({ fcmToken }),
     });
   },
+
+  async setupNotifier() {
+    return request<{ success: boolean; message: string }>('/users/setup-notifier', {
+      method: "POST",
+    });
+  },
 };
