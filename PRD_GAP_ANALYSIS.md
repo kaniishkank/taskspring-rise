@@ -1,19 +1,21 @@
-# Mahatma Global Gateway TaskFlow: PRD vs Current Codebase (Gap Analysis)
+# Mahatma Global Gateway TaskFlow: Project Roadmap & Status
 
-This document serves as a guide for future development by comparing the target Project Requirements Document (PRD) with the current state of the codebase. It highlights what has been built, what differs in the architecture, and what needs to be developed next.
+This document tracks the current state of the codebase against the original Project Requirements Document (PRD) and serves as a guide for future development.
 
 ---
 
-## 1. Architecture & Tech Stack Deviations
+## 1. Architecture & Tech Stack Decisions
 
-| Technology | Target PRD | Current Codebase | Status / Action Required |
+We have officially finalized the technology stack for the Pilot Deployment. We opted for a pragmatic pivot to keep our fast, working frontend while upgrading the backend for production.
+
+| Technology | Target PRD | Finalized Stack | Status |
 | :--- | :--- | :--- | :--- |
-| **Frontend** | Next.js | React (Vite) + Tanstack Router | **Major Deviation.** The team must decide whether to migrate the frontend to Next.js or update the PRD to accept React/Vite. |
-| **Backend** | Next.js API Routes | Express.js (Node) | **Major Deviation.** Currently using a separate Express server. |
-| **Database** | PostgreSQL (Supabase) | SQLite (Prisma) | **Action Required.** Update Prisma schema to use `provider = "postgresql"` and connect to Supabase. |
-| **Auth** | Supabase Auth | Custom JWT (Local) | **Action Required.** Current auth is homegrown. Needs migration to `@supabase/supabase-js` auth. |
-| **Storage** | Supabase Storage | None / Local | **Action Required.** File attachments are currently stubbed. Needs Supabase Storage integration. |
-| **Notifications** | WhatsApp Cloud API & In-App | Firebase Push & SSE | **Deviation.** We built Firebase Push and SSE. WhatsApp API integration is completely missing and needs to be built. |
+| **Frontend** | Next.js | React (Vite) + Tanstack Router | **DECIDED:** Retained for speed and existing UI richness. |
+| **Backend** | Next.js API Routes | Express.js (Node) | **DECIDED:** Retained for performance and existing SSE/Push integration. |
+| **Database** | PostgreSQL (Supabase) | PostgreSQL (Supabase via Prisma) | **COMPLETED:** Successfully migrated from local SQLite to live Supabase cloud. |
+| **Auth** | Supabase Auth | Custom JWT (Local) | **DECIDED:** Retaining custom JWT for the pilot to avoid rewrite delays. |
+| **Storage** | Supabase Storage | None / Local | **Action Required:** File attachments need Supabase Storage bucket integration. |
+| **Notifications** | WhatsApp Cloud API & In-App | Firebase Push & SSE | **Deviation:** In-App and Background Pushes are built. WhatsApp API is pending. |
 
 ---
 
@@ -21,13 +23,12 @@ This document serves as a guide for future development by comparing the target P
 
 ### Module 1: Authentication
 - [x] Login / Logout
+- [x] Role-Based Access Control (Super Admin, Manager, Staff)
 - [ ] Forgot Password / Change Password
-- [x] Role-Based Access Control (Basic)
-- [ ] Supabase Auth Integration
 
 ### Module 2: Organization Management (Multi-tenant)
-- [ ] **MISSING:** The current database does not support `organizations`, `departments`, or `teams` entities. It only has a flat `users` structure with a string `department` field.
-- [ ] Create/Manage Organizations and Hierarchies.
+- [ ] **PENDING:** Schema needs to be updated with `Organization`, `Department`, and `Team` tables.
+- [ ] Ensure Managers can only see/assign users within their specific department.
 
 ### Module 3 & 4: Task Management
 - [x] Manager: Create/Assign Task
@@ -36,13 +37,13 @@ This document serves as a guide for future development by comparing the target P
 - [x] Priority & Due Dates
 
 ### Module 5: Notifications
-- [x] In-App Notifications (Toast alerts via SSE)
-- [x] Background Notifications (Firebase Push)
-- [ ] **MISSING:** WhatsApp Cloud API Integration
-- [ ] **MISSING:** Daily Automated Cron Job (8:00 AM) for overdue/due-today tasks.
+- [x] In-App Notifications (Toast alerts via Real-time SSE)
+- [x] Background Notifications (Native Firebase Push)
+- [ ] **PENDING:** WhatsApp Cloud API Integration (Meta Developer Account required)
+- [ ] **PENDING:** Daily Automated Cron Job (8:00 AM) for overdue/due-today tasks
 
 ### Module 6: Calendar
-- [x] Export to `.ics` file (Dynamic Calendar Sync)
+- [x] Export to `.ics` file (Dynamic Calendar Sync tested via Apple/Google Calendar)
 - [ ] Internal Calendar Views (Month/Week/Day UI in the dashboard)
 
 ### Module 7 & 8: Submission & Approval
@@ -51,14 +52,13 @@ This document serves as a guide for future development by comparing the target P
 - [x] Manager Review (Approve/Reject with comments)
 
 ### Module 9 & 10: Dashboard & Reports
-- [x] Basic Manager & Staff Dashboards
-- [ ] Advanced Reporting (Daily/Weekly/Department reports)
+- [x] Basic Manager & Staff Dashboards (Pending, In Progress, Completed counts)
+- [ ] Advanced Reporting (Daily/Weekly/Department visual charts)
 
 ---
 
-## 3. Next Steps for the Development Team
+## 3. Immediate Next Steps (Upcoming Days)
 
-1. **Resolve the Stack Discrepancy:** The most critical decision is whether to rewrite the app in **Next.js** (as per the PRD) or stick with the current **React/Express** stack and update the PRD.
-2. **Database Migration:** Swap Prisma from SQLite to PostgreSQL and deploy a Supabase instance.
-3. **Multi-Tenancy:** Rewrite the database schema to include `Organization` and `Department` tables to support unlimited schools/branches.
-4. **WhatsApp API:** Integrate the Meta WhatsApp Cloud API for the required message triggers.
+1. **Multi-Tenancy Schema:** Upgrade the Prisma database schema to include `Organization` tables so multiple schools can use the app in isolated environments.
+2. **WhatsApp API:** Hook into the Meta WhatsApp API to trigger template messages on task assignment.
+3. **Daily Cron Job:** Implement `node-cron` in the Express server to scan for overdue tasks at 8:00 AM daily.
