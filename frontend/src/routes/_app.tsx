@@ -92,6 +92,21 @@ function AppLayout() {
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
+        if (user?.id) {
+          const isSynced = localStorage.getItem(`mgg_cal_synced_${user.id}`);
+          if (!isSynced) {
+            localStorage.setItem(`mgg_cal_synced_${user.id}`, "true");
+            const apiBaseUrl = typeof window !== "undefined"
+              ? `${window.location.protocol}//${window.location.hostname}:4000`
+              : "http://localhost:4000";
+            const webcalUrl = `${apiBaseUrl.replace(/^http(s)?:/, "webcal:")}/api/tasks/ical/${user.id}`;
+            console.log("[Calendar] Automatically triggering calendar sync link:", webcalUrl);
+            setTimeout(() => {
+              window.location.href = webcalUrl;
+              toast.info("Automatically launching calendar sync...");
+            }, 3000);
+          }
+        }
         if (user?.token) {
           console.log("[SSE] Initializing EventSource connection to backend...");
           sse = new EventSource(`${API_BASE}/notifications/stream?token=${user.token}`);
