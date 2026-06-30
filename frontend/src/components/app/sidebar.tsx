@@ -9,6 +9,7 @@ import {
   Bell,
   Users,
   Settings,
+  Layers,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -65,11 +66,9 @@ export function AppSidebar({
           collapsed ? "justify-center px-2" : "px-5",
         )}
       >
-        <img
-          src={logoAsset.url}
-          alt="Mahatma Global Gateway"
-          className="h-9 w-9 shrink-0 rounded-full ring-1 ring-border"
-        />
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Layers className="h-6 w-6" />
+        </div>
         {!collapsed && (
           <div className="leading-tight">
             <div className="text-sm font-semibold">Mahatma Global</div>
