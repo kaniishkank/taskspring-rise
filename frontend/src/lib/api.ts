@@ -203,4 +203,10 @@ export const api = {
       method: "DELETE",
     });
   },
+
+  async setupNotifier() {
+    return request<{ success: boolean; message: string }>('/users/setup-notifier', {
+      method: "POST",
+    });
+  },
 };

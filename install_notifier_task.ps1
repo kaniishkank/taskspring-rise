@@ -3,7 +3,11 @@
 # Run this script as Administrator to register the task successfully.
 
 $TaskName = "MGGStartupNotifier"
-$ScriptPath = "C:\Users\Kaushikan\.gemini\antigravity\scratch\taskspring-rise\mgg_startup_notifier.ps1"
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if ([string]::IsNullOrEmpty($ScriptDir)) {
+    $ScriptDir = Get-Location
+}
+$ScriptPath = Join-Path $ScriptDir "mgg_startup_notifier.ps1"
 
 if (-not (Test-Path $ScriptPath)) {
     Write-Error "Could not find the startup notifier script at: $ScriptPath. Please make sure the path is correct."

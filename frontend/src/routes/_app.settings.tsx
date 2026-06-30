@@ -257,6 +257,29 @@ function SettingsPage() {
                 <Save className="mr-1.5 h-4 w-4" /> Save Preferences
               </Button>
             </div>
+
+            <div className="mt-8 border-t pt-6">
+              <h4 className="text-sm font-semibold text-foreground">Windows OS Startup Notifications</h4>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Automatically receive native Windows Toast notifications on your PC desktop for newly assigned and upcoming tasks immediately when you turn on your PC or log in.
+              </p>
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={async () => {
+                    const promise = api.setupNotifier();
+                    toast.promise(promise, {
+                      loading: "Sending installer request to local server...",
+                      success: (data) => data.message,
+                      error: (err) => err.message || "Failed to trigger installer. Make sure the server runs locally on Windows."
+                    });
+                  }}
+                >
+                  <Palette className="mr-1.5 h-4 w-4 rotate-90" /> Register OS Startup Alerts
+                </Button>
+              </div>
+            </div>
           </div>
         </TabsContent>
 
