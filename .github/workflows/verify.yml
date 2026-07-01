@@ -49,8 +49,22 @@ jobs:
       run: npx playwright install --with-deps
 
     - name: Run Frontend E2E Tests
+      env:
+        DATABASE_URL: postgresql://postgres:test_password@localhost:5432/mgg_taskflow_test?schema=public
+        DIRECT_URL: postgresql://postgres:test_password@localhost:5432/mgg_taskflow_test?schema=public
+        JWT_SECRET: super_secure_ci_test_key_123
+        PORT: 4000
       run: |
-        cd frontend
+        # Start the backend server on port 4000 in the background
+        cd backend
+        npm run dev &
+        
+        # Build and start the frontend preview server on port 8080 in the background
+        cd ../frontend
         npm install
         npm run build
+        npm run preview -- --port 8080 &
+        
+        # Give both background servers 8 seconds to bind to their ports
+        sleep 8
         npx playwright test
