@@ -21,10 +21,10 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
 
     steps:
       - name: Checkout repository
@@ -34,6 +34,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Wait for database initialization
+        run: |
+          echo "Waiting for PostgreSQL database container to settle..."
+          sleep 8
 
       - name: Install dependencies (Backend)
         run: |
@@ -69,6 +74,7 @@ jobs:
           DATABASE_URL: "postgresql://postgres:password123@localhost:5432/taskflow_test?schema=public"
           JWT_SECRET: "ci-test-secret"
           PORT: 4000
+          NODE_ENV: "test"
 
       - name: Install dependencies (Frontend)
         run: |
