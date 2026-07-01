@@ -34,7 +34,11 @@ app.use("/api/notifications", notificationsRouter);
 
 app.get("/api/health", (_, res) => res.json({ ok: true }));
 
-const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`Backend listening on http://localhost:${port}`);
-});
+if (process.env.NODE_ENV !== "test") {
+  const port = process.env.PORT || 4000;
+  app.listen(port, () => {
+    console.log(`Backend listening on http://localhost:${port}`);
+  });
+}
+
+export { app };
