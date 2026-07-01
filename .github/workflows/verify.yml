@@ -57,15 +57,13 @@ jobs:
       run: |
         cd frontend
         npm install
-        # 1. Build the production application cleanly first
         npm run build
-        # 2. Start the preview server on port 8080 in the background *after* dist is fully generated
-        npm run preview -- --port 8080 &
-        # 3. Start the backend development API server in the background
+        # Use npx vite preview to correctly host the Nitro build on port 8080
+        npx vite preview --port 8080 &
+        
         cd ../backend
         npm run dev &
-        # 4. Wait for both background ports to bind completely
-        sleep 10
-        # 5. Run the E2E validation suite
+        
+        sleep 12
         cd ../frontend
         npx playwright test
