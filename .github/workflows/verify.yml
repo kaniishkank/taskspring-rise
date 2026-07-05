@@ -55,15 +55,15 @@ jobs:
         JWT_SECRET: super_secure_ci_test_key_123
         PORT: 4000
       run: |
-        cd frontend
-        npm install
-        npm run build
-        # Use npx vite preview to correctly host the Nitro build on port 8080
-        npx vite preview --port 8080 &
-        
-        cd ../backend
+        cd backend
         npm run dev &
         
-        sleep 12
         cd ../frontend
+        npm install
+        # Run the dev server instead of preview to bypass the dist/server module crash
+        npm run dev -- --port 8080 &
+        
+        # Give both servers plenty of time to boot
+        sleep 15
+        
         npx playwright test
