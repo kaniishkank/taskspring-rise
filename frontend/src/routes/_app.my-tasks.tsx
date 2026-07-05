@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import { ListChecks } from "lucide-react";
@@ -9,6 +9,20 @@ import { api } from "@/lib/api";
 import type { Task, User } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/my-tasks")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined") {
+      let isManagerOrAdmin = false;
+      try {
+        const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
+        if (user && (user.role === "super_admin" || user.role === "manager")) {
+          isManagerOrAdmin = true;
+        }
+      } catch {}
+      if (isManagerOrAdmin) {
+        throw redirect({ to: "/" });
+      }
+    }
+  },
   component: MyTasks,
 });
 

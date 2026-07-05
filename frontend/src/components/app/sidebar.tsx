@@ -23,7 +23,7 @@ type Item = { to: string; label: string; icon: typeof LayoutDashboard; roles: Ro
 const items: Item[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["super_admin", "manager", "staff"] },
   { to: "/tasks", label: "Tasks", icon: ListChecks, roles: ["super_admin", "manager"] },
-  { to: "/my-tasks", label: "My Tasks", icon: CheckSquare, roles: ["super_admin", "manager", "staff"] },
+  { to: "/my-tasks", label: "My Tasks", icon: CheckSquare, roles: ["staff"] },
   { to: "/submissions", label: "Submissions", icon: Inbox, roles: ["super_admin", "manager"] },
   { to: "/calendar", label: "Calendar", icon: Calendar, roles: ["super_admin", "manager", "staff"] },
   { to: "/reports", label: "Reports", icon: BarChart3, roles: ["super_admin", "manager"] },
