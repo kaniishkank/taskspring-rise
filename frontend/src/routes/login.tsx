@@ -29,19 +29,27 @@ function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginId.trim()) return;
+    console.log("[Login] Form submitted! ID:", loginId);
+    if (!loginId.trim()) {
+      console.log("[Login] Empty ID, returning.");
+      return;
+    }
     setLoading(true);
     try {
+      console.log("[Login] Calling api.login...");
       const response = await api.login(loginId, password);
+      console.log("[Login] Success! User:", response.user);
       window.sessionStorage.setItem("mgg_user", JSON.stringify({ id: response.user.id, role: response.user.role, name: response.user.name, token: response.token }));
       toast.success(`Welcome back, ${response.user.name}!`);
       if (response.user.role === "manager" || response.user.role === "super_admin") {
+        console.log("[Login] Redirecting to /");
         navigate({ to: "/" });
       } else {
+        console.log("[Login] Redirecting to /tasks");
         navigate({ to: "/tasks" });
       }
     } catch (err: any) {
-      console.error(err);
+      console.error("[Login Exception]", err);
       toast.error(err.message || "Invalid credentials. Access Denied.");
     } finally {
       setLoading(false);

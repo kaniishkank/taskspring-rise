@@ -43,6 +43,7 @@ jobs:
         cd backend
         npm install
         npx prisma db push
+        npm run prisma:seed
         npm run test
 
     - name: Install Playwright Browsers
