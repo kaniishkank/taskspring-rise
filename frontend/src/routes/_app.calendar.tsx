@@ -73,6 +73,11 @@ function CalendarPage() {
       .filter((t) => currentUser?.role !== "staff" || t.assignedTo === currentUser?.id)
       .filter((t) => isSameDay(new Date(t.dueDate), d));
 
+  const getAssigneeName = (userId: string) => {
+    const user = users.find((u) => u.id === userId);
+    return user ? user.name : "Unassigned";
+  };
+
   const handleDragStart = (e: React.DragEvent, id: string) => {
     if (currentUser?.role === "staff") {
       e.preventDefault();
@@ -222,7 +227,10 @@ function CalendarPage() {
                       className="flex items-center gap-1.5 truncate rounded border bg-background px-1.5 py-1 hover:bg-accent cursor-grab active:cursor-grabbing text-[11px] shadow-sm"
                     >
                       <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", priorityDot[t.priority])} />
-                      <span className="truncate">{t.title}</span>
+                      <span className="truncate">
+                        {t.title}
+                        {currentUser?.role !== "staff" && ` (${getAssigneeName(t.assignedTo)})`}
+                      </span>
                     </Link>
                   ))}
                   {dayTasks.length > 3 && <div className="px-1 text-[10px] text-muted-foreground">+{dayTasks.length - 3} more</div>}
