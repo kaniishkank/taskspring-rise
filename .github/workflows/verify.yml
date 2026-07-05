@@ -63,16 +63,20 @@ jobs:
         JWT_SECRET: super_secure_ci_test_key_123
         PORT: 4000
       run: |
-        # Start backend first
-        cd backend
-        npm run dev &
+        # 1. Install frontend dependencies first
+        cd frontend
+        npm install
         
-        # Start frontend server
-        cd ../frontend
+        # 2. Start frontend dev server
         npm run dev -- --port 8080 &
         
-        # Give both background servers 15 seconds to fully boot and stabilize
+        # 3. Start backend dev server
+        cd ../backend
+        npm run dev &
+        
+        # 4. Stabilize background processes
         sleep 15
         
-        # Run the tests
+        # 5. Run tests
+        cd ../frontend
         npx playwright test
