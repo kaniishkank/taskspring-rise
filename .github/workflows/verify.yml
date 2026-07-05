@@ -29,7 +29,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20
+        node-version: 22
 
     - name: Wait for database initialization
       run: sleep 10
@@ -56,15 +56,74 @@ jobs:
         JWT_SECRET: super_secure_ci_test_key_123
         PORT: 4000
       run: |
+        # 1. Start the backend development server in background
         cd backend
-        npm run dev &
+        npm run dev > backend.log 2>&1 &
+        BACKEND_PID=$!
         
+        # 2. Install dependencies & start the frontend dev server in background
         cd ../frontend
         npm install
-        # Run the dev server instead of preview to bypass the dist/server module crash
-        npm run dev -- --port 8080 &
+        npm run dev -- --port 8080 > frontend.log 2>&1 &
+        FRONTEND_PID=$!
         
-        # Give both servers plenty of time to boot
-        sleep 15
+        # 3. Perform active health checks on both ports
+        echo "Performing health checks on backend (4000) and frontend (8080)..."
+        timeout=45
+        count=0
+        while [ $count -lt $timeout ]; do
+          backend_ready=0
+          frontend_ready=0
+          
+          # Probe backend login route
+          if curl -s http://localhost:4000/api/auth/me > /dev/null; then
+            backend_ready=1
+          fi
+          
+          # Probe frontend login route
+          if curl -s http://localhost:8080/login > /dev/null; then
+            frontend_ready=1
+          fi
+          
+          if [ $backend_ready -eq 1 ] && [ $frontend_ready -eq 1 ]; then
+            echo "Both servers are live and responsive!"
+            break
+          fi
+          
+          # Check for premature background process crashes
+          if ! kill -0 $BACKEND_PID 2>/dev/null; then
+            echo "Error: Backend process crashed immediately! Log dump:"
+            cat ../backend/backend.log
+            exit 1
+          fi
+          
+          if ! kill -0 $FRONTEND_PID 2>/dev/null; then
+            echo "Error: Frontend process crashed immediately! Log dump:"
+            cat frontend.log
+            exit 1
+          fi
+          
+          sleep 1
+          count=$((count + 1))
+        done
         
+        if [ $count -eq $timeout ]; then
+          echo "Error: Timeout waiting for dev servers to bind to local ports!"
+          echo "=== Backend Log Output ==="
+          cat ../backend/backend.log
+          echo "=== Frontend Log Output ==="
+          cat frontend.log
+          kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+          exit 1
+        fi
+        
+        # 4. Execute the E2E verification suite
+        echo "Executing Playwright E2E tests..."
         npx playwright test
+        TEST_EXIT_CODE=$?
+        
+        # 5. Clean up background processes before exit
+        echo "Cleaning up server processes (PIDs: $BACKEND_PID, $FRONTEND_PID)..."
+        kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
+        
+        exit $TEST_EXIT_CODE
