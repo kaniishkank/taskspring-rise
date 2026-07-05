@@ -43,8 +43,15 @@ jobs:
         cd backend
         npm install
         npx prisma db push
-        npm run prisma:seed
         npm run test
+
+    - name: Seed Database for E2E Tests
+      env:
+        DATABASE_URL: postgresql://postgres:test_password@localhost:5432/mgg_taskflow_test?schema=public
+        DIRECT_URL: postgresql://postgres:test_password@localhost:5432/mgg_taskflow_test?schema=public
+      run: |
+        cd backend
+        npm run prisma:seed
 
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
