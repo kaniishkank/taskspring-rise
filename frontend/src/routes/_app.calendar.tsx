@@ -52,12 +52,13 @@ function CalendarPage() {
   const [copiedWebcal, setCopiedWebcal] = useState(false);
   const [copiedHttp, setCopiedHttp] = useState(false);
 
-  const host = typeof window !== "undefined"
+  const baseHost = typeof window !== "undefined"
     ? (window.location.host === "localhost:8080" ? "localhost:4000" : window.location.host)
     : "localhost:4000";
+  const protocol = typeof window !== "undefined" ? window.location.protocol : "http:";
 
-  const webcalUrl = currentUser?.calendarToken ? `webcal://${host}/api/calendar/feed/${currentUser.calendarToken}` : "";
-  const httpUrl = currentUser?.calendarToken ? `http://${host}/api/calendar/feed/${currentUser.calendarToken}` : "";
+  const webcalUrl = currentUser?.calendarToken ? `webcal://${baseHost}/api/calendar/feed/${currentUser.calendarToken}` : "";
+  const httpUrl = currentUser?.calendarToken ? `${protocol}//${baseHost}/api/calendar/feed/${currentUser.calendarToken}` : "";
 
   // Quick add task form states
   const [isAddOpen, setIsAddOpen] = useState(false);
