@@ -37,8 +37,8 @@ export const Route = createFileRoute("/_app/")({
     if (typeof window !== "undefined") {
       let isStaff = false;
       try {
-        const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
-        if (user && user.role === "staff") {
+        const user = JSON.parse(window.sessionStorage.getItem("mgg_user") || "{}");
+        if (user && user.role === "STAFF") {
           isStaff = true;
         }
       } catch {}
@@ -61,8 +61,8 @@ function Dashboard() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
-      if (user && user.role === "staff") {
+      const user = JSON.parse(window.sessionStorage.getItem("mgg_user") || "{}");
+      if (user && user.role === "STAFF") {
         navigate({ to: "/tasks", replace: true });
       }
     } catch {}
@@ -144,8 +144,8 @@ function Dashboard() {
 
   if (typeof window !== "undefined") {
     try {
-      const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
-      if (user && user.role === "staff") {
+      const user = JSON.parse(window.sessionStorage.getItem("mgg_user") || "{}");
+      if (user && user.role === "STAFF") {
         return null;
       }
     } catch {}
@@ -158,10 +158,10 @@ function Dashboard() {
   return (
     <div>
       <PageHeader
-        title={currentUser?.role === "staff" ? "My dashboard" : "Manager dashboard"}
-        description={currentUser?.role === "staff" ? `Overview of ${currentUser?.name ?? "your"}'s tasks and upcoming deadlines.` : "Overview of tasks across your team this week."}
+        title={currentUser?.role === "STAFF" ? "My dashboard" : "Manager dashboard"}
+        description={currentUser?.role === "STAFF" ? `Overview of ${currentUser?.name ?? "your"}'s tasks and upcoming deadlines.` : "Overview of tasks across your team this week."}
         actions={
-          currentUser?.role !== "staff" && (
+          currentUser?.role !== "STAFF" && (
             <Button asChild>
               <Link to="/tasks/new"><Plus className="mr-1.5 h-4 w-4" />New task</Link>
             </Button>
@@ -242,7 +242,7 @@ function Dashboard() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {currentUser?.role !== "staff" ? (
+        {currentUser?.role !== "STAFF" ? (
           <>
             <div className="rounded-xl border bg-card p-5 shadow-sm lg:col-span-2">
               <h3 className="text-base font-semibold">Team performance</h3>
@@ -270,7 +270,7 @@ function Dashboard() {
               <h3 className="text-base font-semibold">Recent activity</h3>
               <ul className="mt-4 space-y-4">
                 {notifications
-                  .filter((n) => currentUser?.role !== "staff" || n.userId === currentUser?.id)
+                  .filter((n) => currentUser?.role !== "STAFF" || n.userId === currentUser?.id)
                   .slice(0, 5)
                   .map((n) => (
                   <li key={n.id} className="flex gap-3">
@@ -294,7 +294,7 @@ function Dashboard() {
             <h3 className="text-base font-semibold">Recent activity</h3>
             <ul className="mt-4 space-y-4">
               {notifications
-                .filter((n) => currentUser?.role !== "staff" || n.userId === currentUser?.id)
+                .filter((n) => currentUser?.role !== "STAFF" || n.userId === currentUser?.id)
                 .slice(0, 5)
                 .map((n) => (
                 <li key={n.id} className="flex gap-3">
@@ -328,7 +328,7 @@ function Dashboard() {
         <ul className="divide-y">
           {tasks
             .filter((t) => !["completed", "approved"].includes(t.status))
-            .filter((t) => currentUser?.role !== "staff" || t.assignedTo === currentUser?.id)
+            .filter((t) => currentUser?.role !== "STAFF" || t.assignedTo === currentUser?.id)
             .slice(0, 5)
             .map((t) => {
               const u = users.find((user) => user.id === t.assignedTo);

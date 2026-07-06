@@ -11,6 +11,12 @@ import {
   startOfMonth,
   startOfWeek,
   subMonths,
+  addWeeks,
+  subWeeks,
+  addDays,
+  subDays,
+  startOfDay,
+  endOfDay,
 } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,13 +70,55 @@ function CalendarPage() {
     void api.getCurrentUser().then((data) => setCurrentUser(data.user)).catch(() => {});
   }, []);
 
-  const start = startOfWeek(startOfMonth(cursor));
-  const end = endOfWeek(endOfMonth(cursor));
+  let start: Date;
+  let end: Date;
+  if (view === "month") {
+    start = startOfWeek(startOfMonth(cursor));
+    end = endOfWeek(endOfMonth(cursor));
+  } else if (view === "week") {
+    start = startOfWeek(cursor);
+    end = endOfWeek(cursor);
+  } else {
+    start = startOfDay(cursor);
+    end = endOfDay(cursor);
+  }
   const days = eachDayOfInterval({ start, end });
+
+  const handlePrev = () => {
+    if (view === "month") {
+      setCursor(subMonths(cursor, 1));
+    } else if (view === "week") {
+      setCursor(subWeeks(cursor, 1));
+    } else {
+      setCursor(subDays(cursor, 1));
+    }
+  };
+
+  const handleNext = () => {
+    if (view === "month") {
+      setCursor(addMonths(cursor, 1));
+    } else if (view === "week") {
+      setCursor(addWeeks(cursor, 1));
+    } else {
+      setCursor(addDays(cursor, 1));
+    }
+  };
+
+  const getHeaderTitle = () => {
+    if (view === "month") {
+      return format(cursor, "MMMM yyyy");
+    } else if (view === "week") {
+      const startW = startOfWeek(cursor);
+      const endW = endOfWeek(cursor);
+      return `Week of ${format(startW, "MMM d")} - ${format(endW, "MMM d, yyyy")}`;
+    } else {
+      return format(cursor, "eeee, MMMM d, yyyy");
+    }
+  };
 
   const tasksByDay = (d: Date) =>
     tasks
-      .filter((t) => currentUser?.role !== "staff" || t.assignedTo === currentUser?.id)
+      .filter((t) => currentUser?.role !== "STAFF" || t.assignedTo === currentUser?.id)
       .filter((t) => isSameDay(new Date(t.dueDate), d));
 
   const getAssigneeName = (userId: string) => {
@@ -83,7 +131,7 @@ function CalendarPage() {
   };
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
-    if (currentUser?.role === "staff") {
+    if (currentUser?.role === "STAFF") {
       e.preventDefault();
       return;
     }
@@ -96,7 +144,7 @@ function CalendarPage() {
 
   const handleDrop = async (e: React.DragEvent, d: Date) => {
     e.preventDefault();
-    if (currentUser?.role === "staff") return;
+    if (currentUser?.role === "STAFF") return;
     const taskId = e.dataTransfer.getData("text/plain");
     if (!taskId) return;
 
@@ -174,21 +222,23 @@ function CalendarPage() {
       />
       <div className="rounded-xl border bg-card shadow-sm">
         <div className="flex items-center justify-between border-b p-4">
-          <h3 className="text-base font-semibold">{format(cursor, "MMMM yyyy")}</h3>
+          <h3 className="text-base font-semibold">{getHeaderTitle()}</h3>
           <div className="flex gap-1">
-            <Button variant="outline" size="icon" onClick={() => setCursor(subMonths(cursor, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={handlePrev}><ChevronLeft className="h-4 w-4" /></Button>
             <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>Today</Button>
-            <Button variant="outline" size="icon" onClick={() => setCursor(addMonths(cursor, 1))}><ChevronRight className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={handleNext}><ChevronRight className="h-4 w-4" /></Button>
           </div>
         </div>
-        <div className="grid grid-cols-7 border-b text-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
-            <div key={d} className="py-2">{d}</div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7">
+        {view !== "day" && (
+          <div className="grid grid-cols-7 border-b text-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
+              <div key={d} className="py-2">{d}</div>
+            ))}
+          </div>
+        )}
+        <div className={cn("grid", view === "day" ? "grid-cols-1" : "grid-cols-7")}>
           {days.map((d) => {
-            const inMonth = isSameMonth(d, cursor);
+            const inMonth = view !== "month" || isSameMonth(d, cursor);
             const dayTasks = tasksByDay(d);
             const isToday = isSameDay(d, new Date());
             return (
@@ -197,12 +247,13 @@ function CalendarPage() {
                 onDragOver={handleDragOver}
                 onDrop={(e) => void handleDrop(e, d)}
                 onDoubleClick={() => {
-                  if (currentUser?.role !== "staff") {
+                  if (currentUser?.role !== "STAFF") {
                     handleDayClick(d);
                   }
                 }}
                 className={cn(
-                  "min-h-28 border-b border-r p-2 text-xs transition-colors hover:bg-muted/10",
+                  "border-b border-r p-2 text-xs transition-colors hover:bg-muted/10",
+                  view === "day" ? "min-h-[350px]" : view === "week" ? "min-h-[250px]" : "min-h-28",
                   !inMonth && "bg-muted/20 text-muted-foreground"
                 )}
               >
@@ -210,7 +261,7 @@ function CalendarPage() {
                   <div className={cn("inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium", isToday && "bg-primary text-primary-foreground")}>
                     {format(d, "d")}
                   </div>
-                  {currentUser?.role !== "staff" && (
+                  {currentUser?.role !== "STAFF" && (
                     <button
                       onClick={() => handleDayClick(d)}
                       className="h-4 w-4 rounded border text-[9px] flex items-center justify-center hover:bg-accent text-muted-foreground"
@@ -226,14 +277,14 @@ function CalendarPage() {
                       key={t.id}
                       to="/tasks/$id"
                       params={{ id: t.id }}
-                      draggable={currentUser?.role !== "staff"}
+                      draggable={currentUser?.role !== "STAFF"}
                       onDragStart={(e) => handleDragStart(e, t.id)}
                       className="flex items-center gap-1.5 truncate rounded border bg-background px-1.5 py-1 hover:bg-accent cursor-grab active:cursor-grabbing text-[11px] shadow-sm"
                     >
                       <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", priorityDot[t.priority])} />
                       <span className="truncate">
                         {t.title}
-                        {currentUser?.role !== "staff" && ` (${getAssigneeName(t.assignedTo)})`}
+                        {currentUser?.role !== "STAFF" && ` (${getAssigneeName(t.assignedTo)})`}
                         {` - [${getTaskStatusLabel(t.status)}]`}
                       </span>
                     </Link>
@@ -298,7 +349,7 @@ function CalendarPage() {
               <Select value={newAssignedToId} onValueChange={setNewAssignedToId}>
                 <SelectTrigger><SelectValue placeholder="Choose a staff member" /></SelectTrigger>
                 <SelectContent>
-                  {users.filter((u) => u.role === "staff").map((u) => (
+                  {users.filter((u) => u.role === "STAFF").map((u) => (
                     <SelectItem key={u.id} value={u.id}>{u.name} · {u.department}</SelectItem>
                   ))}
                 </SelectContent>

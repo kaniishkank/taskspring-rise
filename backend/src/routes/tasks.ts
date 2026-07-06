@@ -137,7 +137,7 @@ router.get("/", async (req, res) => {
   const where: any = {};
 
   const user = await getAuthUser(req);
-  if (user && user.role === "staff") {
+  if (user && user.role === "STAFF") {
     where.assignedToId = user.id;
   }
 
@@ -177,7 +177,7 @@ router.get("/:id", async (req, res) => {
   if (!task) return res.status(404).json({ error: "Task not found" });
 
   const user = await getAuthUser(req);
-  if (user && user.role === "staff" && task.assignedToId !== user.id) {
+  if (user && user.role === "STAFF" && task.assignedToId !== user.id) {
     return res.status(403).json({ error: "Access denied. You do not have permission to view this task." });
   }
 
@@ -188,7 +188,7 @@ router.post("/", async (req, res) => {
   const { title, description, priority, assignedToId, assignedById, dueDate, attachments } = req.body;
 
   const user = await getAuthUser(req);
-  if (!user || user.role === "staff") {
+  if (!user || user.role === "STAFF") {
     return res.status(403).json({ error: "Access denied. Only managers can create/assign tasks." });
   }
 
@@ -226,7 +226,7 @@ router.put("/:id", async (req, res) => {
   const { title, description, priority, status, dueDate, assignedToId, attachments } = req.body;
 
   const user = await getAuthUser(req);
-  if (!user || user.role === "staff") {
+  if (!user || user.role === "STAFF") {
     return res.status(403).json({ error: "Access denied. Only managers can update tasks." });
   }
 
@@ -252,7 +252,7 @@ router.post("/:id/comments", async (req, res) => {
   if (!task) return res.status(404).json({ error: "Task not found" });
 
   const user = await getAuthUser(req);
-  if (user && user.role === "staff" && task.assignedToId !== user.id) {
+  if (user && user.role === "STAFF" && task.assignedToId !== user.id) {
     return res.status(403).json({ error: "Access denied. You can only comment on tasks assigned to you." });
   }
 
@@ -273,7 +273,7 @@ router.post("/:id/submissions", async (req, res) => {
   if (!task) return res.status(404).json({ error: "Task not found" });
 
   const user = await getAuthUser(req);
-  if (user && user.role === "staff" && task.assignedToId !== user.id) {
+  if (user && user.role === "STAFF" && task.assignedToId !== user.id) {
     return res.status(403).json({ error: "Access denied. You can only submit proof for tasks assigned to you." });
   }
 
@@ -327,7 +327,7 @@ router.patch("/:id/status", async (req, res) => {
   if (!existingTask) return res.status(404).json({ error: "Task not found" });
 
   const user = await getAuthUser(req);
-  if (user && user.role === "staff" && existingTask.assignedToId !== user.id) {
+  if (user && user.role === "STAFF" && existingTask.assignedToId !== user.id) {
     return res.status(403).json({ error: "Access denied. You can only update the status of your own tasks." });
   }
 
@@ -342,7 +342,7 @@ router.patch("/:id/submissions/:submissionId", async (req, res) => {
   const { status, commentText, managerId } = req.body;
 
   const user = await getAuthUser(req);
-  if (!user || user.role === "staff") {
+  if (!user || user.role === "STAFF") {
     return res.status(403).json({ error: "Access denied. Only managers can approve/reject submissions." });
   }
   

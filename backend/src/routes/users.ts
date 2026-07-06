@@ -56,7 +56,7 @@ router.post("/", authorizeManager as any, async (req, res) => {
  * @desc Updates an existing user's details, including notification preferences.
  */
 router.put("/:id", async (req: AuthRequest, res) => {
-  if (req.user?.role !== "manager" && req.user?.role !== "super_admin" && req.user?.id !== req.params.id) {
+  if (req.user?.role !== "MANAGER" && req.user?.role !== "OPERATION" && req.user?.id !== req.params.id) {
     return res.status(403).json({ error: "Forbidden: You can only edit your own profile" });
   }
 
@@ -67,8 +67,8 @@ router.put("/:id", async (req: AuthRequest, res) => {
   if (email !== undefined) data.email = email;
   if (department !== undefined) data.department = department;
   // Only managers can change active status or role
-  if (active !== undefined && (req.user?.role === "manager" || req.user?.role === "super_admin")) data.active = active;
-  if (role !== undefined && (req.user?.role === "manager" || req.user?.role === "super_admin")) data.role = role;
+  if (active !== undefined && (req.user?.role === "MANAGER" || req.user?.role === "OPERATION")) data.active = active;
+  if (role !== undefined && (req.user?.role === "MANAGER" || req.user?.role === "OPERATION")) data.role = role;
   if (avatar !== undefined) data.avatar = avatar;
   
   if (password) {

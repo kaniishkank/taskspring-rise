@@ -32,7 +32,7 @@ describe("iCalendar API Endpoint Tests", () => {
         id: userId,
         name: "QA Sync User",
         email: `qa_tester_${randomSuffix}@mgg.edu.in`,
-        role: "staff",
+        role: "STAFF",
         department: "Testing",
       },
     });
@@ -73,7 +73,7 @@ describe("iCalendar API Endpoint Tests", () => {
         id: userId,
         name: "Empty Calendar User",
         email: `empty_cal_${randomSuffix}@mgg.edu.in`,
-        role: "staff",
+        role: "STAFF",
       },
     });
 

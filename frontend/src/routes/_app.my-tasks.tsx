@@ -13,8 +13,8 @@ export const Route = createFileRoute("/_app/my-tasks")({
     if (typeof window !== "undefined") {
       let isManagerOrAdmin = false;
       try {
-        const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
-        if (user && (user.role === "super_admin" || user.role === "manager")) {
+        const user = JSON.parse(window.sessionStorage.getItem("mgg_user") || "{}");
+        if (user && (user.role === "OPERATION" || user.role === "MANAGER")) {
           isManagerOrAdmin = true;
         }
       } catch {}

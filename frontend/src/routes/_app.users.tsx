@@ -33,8 +33,8 @@ export const Route = createFileRoute("/_app/users")({
     if (typeof window !== "undefined") {
       let isStaff = false;
       try {
-        const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
-        if (user && user.role === "staff") {
+        const user = JSON.parse(window.sessionStorage.getItem("mgg_user") || "{}");
+        if (user && user.role === "STAFF") {
           isStaff = true;
         }
       } catch {}
@@ -47,9 +47,9 @@ export const Route = createFileRoute("/_app/users")({
 });
 
 const roleLabels: Record<Role, string> = {
-  super_admin: "Super admin",
-  manager: "Manager",
-  staff: "Staff",
+  OPERATION: "Operation (Central Team)",
+  MANAGER: "Manager (School level)",
+  STAFF: "Staff (All Staff)",
 };
 
 function UsersPage() {
@@ -65,7 +65,7 @@ function UsersPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("staff");
+  const [role, setRole] = useState<Role>("STAFF");
   const [department, setDepartment] = useState("");
   const [active, setActive] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -102,7 +102,7 @@ function UsersPage() {
       setIsAddOpen(false);
       setName("");
       setEmail("");
-      setRole("staff");
+      setRole("STAFF");
       setDepartment("");
       setActive(true);
       void loadUsers();
@@ -145,7 +145,7 @@ function UsersPage() {
     setName("");
     setEmail("");
     setPassword("");
-    setRole("staff");
+    setRole("STAFF");
     setDepartment("");
     setActive(true);
     setIsAddOpen(true);
@@ -229,8 +229,8 @@ function UsersPage() {
           <TabsTrigger value="staff">Staff</TabsTrigger>
         </TabsList>
         <TabsContent value="all">{renderTable(filtered)}</TabsContent>
-        <TabsContent value="managers">{renderTable(filtered.filter((u) => u.role === "manager" || u.role === "super_admin"))}</TabsContent>
-        <TabsContent value="staff">{renderTable(filtered.filter((u) => u.role === "staff"))}</TabsContent>
+        <TabsContent value="managers">{renderTable(filtered.filter((u) => u.role === "MANAGER" || u.role === "OPERATION"))}</TabsContent>
+        <TabsContent value="staff">{renderTable(filtered.filter((u) => u.role === "STAFF"))}</TabsContent>
       </Tabs>
 
       {/* Add User Dialog */}
@@ -257,9 +257,9 @@ function UsersPage() {
               <Select value={role} onValueChange={(v) => setRole(v as Role)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="staff">Staff</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                  <SelectItem value="STAFF">Staff</SelectItem>
+                  <SelectItem value="MANAGER">Manager</SelectItem>
+                  <SelectItem value="OPERATION">Operation (Central Team)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -299,9 +299,9 @@ function UsersPage() {
               <Select value={role} onValueChange={(v) => setRole(v as Role)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="staff">Staff</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                  <SelectItem value="STAFF">Staff</SelectItem>
+                  <SelectItem value="MANAGER">Manager</SelectItem>
+                  <SelectItem value="OPERATION">Operation (Central Team)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -17,8 +17,8 @@ export const Route = createFileRoute("/_app/submissions")({
     if (typeof window !== "undefined") {
       let isStaff = false;
       try {
-        const user = JSON.parse(window.localStorage.getItem("mgg_user") || "{}");
-        if (user && user.role === "staff") {
+        const user = JSON.parse(window.sessionStorage.getItem("mgg_user") || "{}");
+        if (user && user.role === "STAFF") {
           isStaff = true;
         }
       } catch {}

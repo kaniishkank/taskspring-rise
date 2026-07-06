@@ -247,7 +247,7 @@ function TasksPage() {
                 Board
               </button>
             </div>             <Button variant="outline" onClick={handleExport}><Download className="mr-1.5 h-4 w-4" />Export</Button>
-            {currentUser?.role !== "staff" && (
+            {currentUser?.role !== "STAFF" && (
               <Button asChild><Link to="/tasks/new"><Plus className="mr-1.5 h-4 w-4" />Create task</Link></Button>
             )}
           </div>

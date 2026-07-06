@@ -84,7 +84,7 @@ function NotificationsPage() {
         </TabsList>
         {tabs.map((t) => {
           const list = items
-            .filter((n) => currentUser?.role !== "staff" || n.userId === currentUser?.id)
+            .filter((n) => currentUser?.role !== "STAFF" || n.userId === currentUser?.id)
             .filter(t.filter);
           return (
             <TabsContent key={t.value} value={t.value}>

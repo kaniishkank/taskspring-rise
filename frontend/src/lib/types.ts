@@ -7,7 +7,7 @@ export type TaskStatus =
   | "approved"
   | "rejected"
   | "completed";
-export type Role = "super_admin" | "manager" | "staff";
+export type Role = "OPERATION" | "MANAGER" | "STAFF";
 
 export interface User {
   id: string;

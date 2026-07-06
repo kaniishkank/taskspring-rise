@@ -21,15 +21,15 @@ import { UserAvatar } from "@/components/app/user-avatar";
 type Item = { to: string; label: string; icon: typeof LayoutDashboard; roles: Role[] };
 
 const items: Item[] = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["super_admin", "manager", "staff"] },
-  { to: "/tasks", label: "Tasks", icon: ListChecks, roles: ["super_admin", "manager"] },
-  { to: "/my-tasks", label: "My Tasks", icon: CheckSquare, roles: ["staff"] },
-  { to: "/submissions", label: "Submissions", icon: Inbox, roles: ["super_admin", "manager"] },
-  { to: "/calendar", label: "Calendar", icon: Calendar, roles: ["super_admin", "manager", "staff"] },
-  { to: "/reports", label: "Reports", icon: BarChart3, roles: ["super_admin", "manager"] },
-  { to: "/notifications", label: "Notifications", icon: Bell, roles: ["super_admin", "manager", "staff"] },
-  { to: "/users", label: "Users", icon: Users, roles: ["super_admin", "manager"] },
-  { to: "/settings", label: "Settings", icon: Settings, roles: ["super_admin", "manager", "staff"] },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["OPERATION", "MANAGER", "STAFF"] },
+  { to: "/tasks", label: "Tasks", icon: ListChecks, roles: ["OPERATION", "MANAGER"] },
+  { to: "/my-tasks", label: "My Tasks", icon: CheckSquare, roles: ["STAFF"] },
+  { to: "/submissions", label: "Submissions", icon: Inbox, roles: ["OPERATION", "MANAGER"] },
+  { to: "/calendar", label: "Calendar", icon: Calendar, roles: ["OPERATION", "MANAGER", "STAFF"] },
+  { to: "/reports", label: "Reports", icon: BarChart3, roles: ["OPERATION", "MANAGER"] },
+  { to: "/notifications", label: "Notifications", icon: Bell, roles: ["OPERATION", "MANAGER", "STAFF"] },
+  { to: "/users", label: "Users", icon: Users, roles: ["OPERATION", "MANAGER"] },
+  { to: "/settings", label: "Settings", icon: Settings, roles: ["OPERATION", "MANAGER", "STAFF"] },
 ];
 
 /**

@@ -27,7 +27,7 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
 }
 
 export function authorizeManager(req: AuthRequest, res: Response, next: NextFunction) {
-  if (req.user?.role !== "manager" && req.user?.role !== "super_admin") {
+  if (req.user?.role !== "MANAGER" && req.user?.role !== "OPERATION") {
     return res.status(403).json({ error: "Forbidden: Manager access required" });
   }
   next();

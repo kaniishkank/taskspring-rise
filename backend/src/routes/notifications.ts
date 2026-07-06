@@ -173,7 +173,7 @@ router.get("/", async (req, res) => {
   const where: any = {};
 
   const user = await getAuthUser(req);
-  if (user && user.role === "staff") {
+  if (user && user.role === "STAFF") {
     where.userId = user.id;
   }
 
@@ -188,7 +188,7 @@ router.patch("/read-all", async (req, res) => {
   const where: any = {};
 
   const user = await getAuthUser(req);
-  if (user && user.role === "staff") {
+  if (user && user.role === "STAFF") {
     where.userId = user.id;
   }
 
@@ -208,7 +208,7 @@ router.patch("/:id", async (req, res) => {
   if (!existingNotification) return res.status(404).json({ error: "Notification not found" });
 
   const user = await getAuthUser(req);
-  if (user && user.role === "staff" && existingNotification.userId !== user.id) {
+  if (user && user.role === "STAFF" && existingNotification.userId !== user.id) {
     return res.status(403).json({ error: "Access denied. You do not own this notification." });
   }
 
@@ -226,7 +226,7 @@ router.delete("/:id", async (req, res) => {
   if (!existingNotification) return res.status(404).json({ error: "Notification not found" });
 
   const user = await getAuthUser(req);
-  if (user && user.role === "staff" && existingNotification.userId !== user.id) {
+  if (user && user.role === "STAFF" && existingNotification.userId !== user.id) {
     return res.status(403).json({ error: "Access denied. You do not own this notification." });
   }
 

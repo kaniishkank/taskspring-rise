@@ -155,7 +155,7 @@ function TaskDetail() {
   const assignee = users.find((u) => u.id === task.assignedTo);
   const assigner = users.find((u) => u.id === task.assignedBy);
   const isAssignee = currentUser && task.assignedTo === currentUser.id;
-  const isManager = currentUser && ["manager", "super_admin"].includes(currentUser.role);
+  const isManager = currentUser && ["MANAGER", "OPERATION"].includes(currentUser.role);
   const showReviewActions = isManager && ["submitted", "under_review", "assigned", "in_progress", "rejected"].includes(task.status);
 
   return (

@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_app/reports")({
       let isStaff = false;
       try {
         const user = JSON.parse(window.sessionStorage.getItem("mgg_user") || "{}");
-        if (user && user.role === "staff") {
+        if (user && user.role === "STAFF") {
           isStaff = true;
         }
       } catch {}
@@ -134,7 +134,7 @@ function ReportsPage() {
 
   // Performance Data Calculation
   const performanceData = useMemo(() => {
-    const staff = users.filter((u) => u.role === "staff");
+    const staff = users.filter((u) => u.role === "STAFF");
     return staff.map((u) => {
       const userTasks = filteredTasks.filter((t) => t.assignedTo === u.id);
       let on_time = 0;

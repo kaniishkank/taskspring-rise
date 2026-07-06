@@ -17,7 +17,7 @@ async function main() {
       id: "m1", 
       name: "Dr. R. Kapoor", 
       email: "principal@mgg.edu.in", 
-      role: "manager", 
+      role: "MANAGER", 
       department: "Executive", 
       active: true, 
       password: hashedPassword 

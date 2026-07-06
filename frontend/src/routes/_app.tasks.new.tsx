@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_app/tasks/new")({
     if (typeof window !== "undefined") {
       try {
         const user = JSON.parse(window.sessionStorage.getItem("mgg_user") || "{}");
-        if (user && user.role === "staff") {
+        if (user && user.role === "STAFF") {
           throw redirect({ to: "/my-tasks" });
         }
       } catch {}
@@ -177,11 +177,11 @@ function NewTaskPage() {
                       type="checkbox"
                       className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
                       checked={
-                        selectedAssignees.length === users.filter((u) => u.role === "staff").length &&
+                        selectedAssignees.length === users.filter((u) => u.role === "STAFF").length &&
                         selectedAssignees.length > 0
                       }
                       onChange={(e) => {
-                        const staff = users.filter((u) => u.role === "staff");
+                        const staff = users.filter((u) => u.role === "STAFF");
                         if (e.target.checked) {
                           setSelectedAssignees(staff.map((u) => u.id));
                         } else {
@@ -192,7 +192,7 @@ function NewTaskPage() {
                     <span>Select All Staff</span>
                   </label>
                   <div className="border-t my-1" />
-                  {users.filter((u) => u.role === "staff").map((u) => (
+                  {users.filter((u) => u.role === "STAFF").map((u) => (
                     <label key={u.id} className="flex items-center gap-2 cursor-pointer py-1 select-none text-xs">
                       <input
                         type="checkbox"
