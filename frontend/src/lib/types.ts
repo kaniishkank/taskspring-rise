@@ -22,6 +22,7 @@ export interface User {
   notifyDeadlines?: boolean;
   notifyApprovals?: boolean;
   notifyWeekly?: boolean;
+  calendarToken?: string;
 }
 
 export interface Task {

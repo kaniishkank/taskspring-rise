@@ -23,6 +23,7 @@ model User {
   submissions   Submission[]
   notifications Notification[]
   fcmToken      String?
+  calendarToken String         @unique @default(cuid())
   notifyAssignments Boolean @default(true)
   notifyDeadlines   Boolean @default(true)
   notifyApprovals   Boolean @default(true)

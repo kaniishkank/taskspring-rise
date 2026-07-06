@@ -5,6 +5,7 @@ import authRouter from "./routes/auth.js";
 import tasksRouter from "./routes/tasks.js";
 import usersRouter from "./routes/users.js";
 import notificationsRouter from "./routes/notifications.js";
+import calendarRouter from "./routes/calendar.js";
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use("/api/calendar", calendarRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/tasks", tasksRouter);
 app.use("/api/users", usersRouter);

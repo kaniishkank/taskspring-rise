@@ -53,7 +53,7 @@ describe("iCalendar API Endpoint Tests", () => {
 
     // Query iCal endpoint using Supertest
     const res = await request(app)
-      .get(`/api/tasks/ical/${user.id}`)
+      .get(`/api/calendar/feed/${user.calendarToken}`)
       .expect(200);
 
     // Verify content type and iCalendar structure
@@ -78,7 +78,7 @@ describe("iCalendar API Endpoint Tests", () => {
     });
 
     const res = await request(app)
-      .get(`/api/tasks/ical/${user.id}`)
+      .get(`/api/calendar/feed/${user.calendarToken}`)
       .expect(200);
 
     expect(res.headers["content-type"]).toContain("text/calendar");

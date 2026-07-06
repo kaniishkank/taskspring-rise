@@ -327,7 +327,7 @@ function SettingsPage() {
                   <Input
                     id="ical-link"
                     readOnly
-                    value={`${apiBaseUrl}/api/tasks/ical/${currentUser?.id}`}
+                    value={`${apiBaseUrl}/api/calendar/feed/${currentUser?.calendarToken}`}
                     className="bg-muted/30 font-mono text-xs select-all flex-1"
                   />
                   <div className="flex gap-2">
@@ -335,7 +335,7 @@ function SettingsPage() {
                       type="button"
                       variant="outline"
                       onClick={() => {
-                        navigator.clipboard.writeText(`${apiBaseUrl}/api/tasks/ical/${currentUser?.id}`);
+                        navigator.clipboard.writeText(`${apiBaseUrl}/api/calendar/feed/${currentUser?.calendarToken}`);
                         toast.success("iCalendar link copied to clipboard!");
                       }}
                     >
@@ -344,7 +344,7 @@ function SettingsPage() {
                     <Button
                       type="button"
                       onClick={() => {
-                        const webcalUrl = `${apiBaseUrl.replace(/^http(s)?:/, "webcal:")}/api/tasks/ical/${currentUser?.id}`;
+                        const webcalUrl = `${apiBaseUrl.replace(/^http(s)?:/, "webcal:")}/api/calendar/feed/${currentUser?.calendarToken}`;
                         window.location.href = webcalUrl;
                         toast.success("Launching your native calendar application...");
                       }}
