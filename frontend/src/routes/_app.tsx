@@ -1,5 +1,6 @@
 import { Outlet, createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { isToday } from "date-fns";
 import { AppSidebar } from "@/components/app/sidebar";
 import { Navbar } from "@/components/app/navbar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -38,39 +39,56 @@ function AppLayout() {
 
     const checkDeadlines = async () => {
       try {
-        const [{ user }, tasks] = await Promise.all([
+        const [{ user }, tasks, users] = await Promise.all([
           api.getCurrentUser(),
           api.getTasks(),
+          api.getUsers(),
         ]);
         if (!user) return;
 
-        // Filter tasks assigned to current user which are not completed
-        const myTasks = tasks.filter(
-          (t) => t.assignedTo === user.id && !["completed", "approved"].includes(t.status)
-        );
+        if (user.role === "MANAGER" || user.role === "OPERATION") {
+          // Filter tasks due today and status is not completed/approved (pending)
+          const pendingToday = tasks.filter(
+            (t) => isToday(new Date(t.dueDate)) && !["completed", "approved"].includes(t.status)
+          );
 
-        const now = new Date();
-        const overdue = myTasks.filter((t) => new Date(t.dueDate) < now);
-        const approaching = myTasks.filter((t) => {
-          const d = new Date(t.dueDate);
-          return d >= now && d <= new Date(Date.now() + 48 * 60 * 60 * 1000);
-        });
+          pendingToday.forEach((t) => {
+            const staffUser = users.find((u) => u.id === t.assignedToId);
+            const staffName = staffUser ? staffUser.name : "Unknown Staff";
+            toast.error(
+              `⚠️ Pending Today: ${staffName} has '${t.title}' due by end of day.`,
+              { duration: 8000 }
+            );
+          });
+        } else {
+          // Filter tasks assigned to current user which are not completed
+          const myTasks = tasks.filter(
+            (t) => t.assignedTo === user.id && !["completed", "approved"].includes(t.status)
+          );
 
-        if (overdue.length > 0 && approaching.length > 0) {
-          toast.error(
-            `Attention: You have ${overdue.length} overdue task(s) and ${approaching.length} task(s) due within 48 hours!`,
-            { duration: 8000 }
-          );
-        } else if (overdue.length > 0) {
-          toast.error(
-            `Warning: You have ${overdue.length} overdue task(s)! Please review them.`,
-            { duration: 8000 }
-          );
-        } else if (approaching.length > 0) {
-          toast.warning(
-            `Notice: You have ${approaching.length} task(s) due within the next 48 hours.`,
-            { duration: 8000 }
-          );
+          const now = new Date();
+          const overdue = myTasks.filter((t) => new Date(t.dueDate) < now);
+          const approaching = myTasks.filter((t) => {
+            const d = new Date(t.dueDate);
+            return d >= now && d <= new Date(Date.now() + 48 * 60 * 60 * 1000);
+          });
+
+          if (overdue.length > 0 && approaching.length > 0) {
+            toast.error(
+              `Attention: You have ${overdue.length} overdue task(s) and ${approaching.length} task(s) due within 48 hours!`,
+              { duration: 8000 }
+            );
+          } else if (overdue.length > 0) {
+            toast.error(
+              `Warning: You have ${overdue.length} overdue task(s)! Please review them.`,
+              { duration: 8000 }
+            );
+          } else if (approaching.length > 0) {
+            toast.warning(
+              `Notice: You have ${approaching.length} task(s) due within the next 48 hours.`,
+              { duration: 8000 }
+            );
+          }
         }
 
         window.sessionStorage.setItem("mgg_deadline_alert_shown", "true");
