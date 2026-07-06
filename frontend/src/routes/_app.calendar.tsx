@@ -78,6 +78,10 @@ function CalendarPage() {
     return user ? user.name : "Unassigned";
   };
 
+  const getTaskStatusLabel = (status: string) => {
+    return ["completed", "approved"].includes(status) ? "Completed" : "Pending";
+  };
+
   const handleDragStart = (e: React.DragEvent, id: string) => {
     if (currentUser?.role === "staff") {
       e.preventDefault();
@@ -230,6 +234,7 @@ function CalendarPage() {
                       <span className="truncate">
                         {t.title}
                         {currentUser?.role !== "staff" && ` (${getAssigneeName(t.assignedTo)})`}
+                        {` - [${getTaskStatusLabel(t.status)}]`}
                       </span>
                     </Link>
                   ))}
