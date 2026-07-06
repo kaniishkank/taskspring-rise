@@ -1,4 +1,8 @@
 import { test, expect } from "@playwright/test";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key-change-in-production";
+const mockToken = jwt.sign({ id: "m1", role: "MANAGER" }, JWT_SECRET);
 
 test.describe("MGG TaskFlow Calendar Synchronization Suite", () => {
   test.beforeEach(async ({ page }) => {
@@ -9,12 +13,19 @@ test.describe("MGG TaskFlow Calendar Synchronization Suite", () => {
 
     // 1. Authenticate user by mock setting sessionStorage credentials to bypass login redirection
     await page.goto("http://localhost:8080/login");
-    await page.waitForTimeout(2000); // Wait for React hydration to attach handlers
-    await page.fill('#loginId', "principal@mgg.edu.in");
-    await page.fill('#password', "Admin@2026");
-    await page.click('button[type="submit"]');
+    await page.evaluate((token) => {
+      const mockUser = {
+        id: "m1",
+        email: "principal@mgg.edu.in",
+        role: "MANAGER",
+        name: "Dr. R. Kapoor",
+        token: token
+      };
+      window.sessionStorage.setItem("mgg_user", JSON.stringify(mockUser));
+    }, mockToken);
 
-    // Verify successful login redirect to dashboard
+    // Navigate to dashboard and verify it bypassed redirect successfully
+    await page.goto("http://localhost:8080/");
     await expect(page).toHaveURL("http://localhost:8080/");
   });
 
