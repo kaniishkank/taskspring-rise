@@ -60,6 +60,23 @@ function CalendarPage() {
   const webcalUrl = currentUser?.calendarToken ? `webcal://${baseHost}/api/calendar/feed/${currentUser.calendarToken}` : "";
   const httpUrl = currentUser?.calendarToken ? `${protocol}//${baseHost}/api/calendar/feed/${currentUser.calendarToken}` : "";
 
+  const getGoogleUrl = () => {
+    if (typeof window === "undefined") return "";
+    if (window.location.hostname === "localhost") {
+      const activeTask = tasks.find(t => !["completed", "approved"].includes(t.status)) || tasks[0];
+      if (activeTask) {
+        const dueDateIso = new Date(activeTask.dueDate).toISOString().replace(/-|:|\.\d\d\d/g, "");
+        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(activeTask.title)}&details=${encodeURIComponent(activeTask.description || '')}&dates=${dueDateIso}/${dueDateIso}`;
+      }
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(10, 0, 0, 0);
+      const defaultIso = tomorrow.toISOString().replace(/-|:|\.\d\d\d/g, "");
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Final Client Presentation & Deliverable Review")}&details=${encodeURIComponent("Complete walkthrough of REQ-003, REQ-007, and REQ-008 with the stakeholders.")}&dates=${defaultIso}/${defaultIso}`;
+    }
+    return `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(httpUrl)}`;
+  };
+
   // Quick add task form states
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -412,7 +429,7 @@ function CalendarPage() {
 
               <Button asChild variant="outline" className="w-full justify-start h-10 font-medium border-muted-foreground/20">
                 <a
-                  href={`https://calendar.google.com/calendar/render?cid=${encodeURIComponent(httpUrl)}`}
+                  href={getGoogleUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
