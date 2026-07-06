@@ -1,5 +1,6 @@
 import request from "supertest";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import jwt from "jsonwebtoken";
 import { app } from "../server.js";
 import { db } from "../db.js";
 
@@ -87,3 +88,99 @@ describe("iCalendar API Endpoint Tests", () => {
     expect(res.text).toContain("END:VCALENDAR");
   });
 });
+
+describe("REQ-008: Real-Time Notification Alerts on Task Changes", () => {
+  let staffUser: any;
+  let managerUser: any;
+  let task: any;
+  let staffToken: string;
+
+  beforeAll(async () => {
+    const suffix = Math.floor(Math.random() * 100000);
+    
+    // Create staff user
+    staffUser = await db.user.create({
+      data: {
+        id: `staff-${suffix}`,
+        name: `Staff Member ${suffix}`,
+        email: `staff_${suffix}@mgg.edu.in`,
+        role: "STAFF",
+        department: "Operations",
+      },
+    });
+
+    // Create manager user
+    managerUser = await db.user.create({
+      data: {
+        id: `manager-${suffix}`,
+        name: `Manager User ${suffix}`,
+        email: `manager_${suffix}@mgg.edu.in`,
+        role: "MANAGER",
+        department: "Executive",
+      },
+    });
+
+    // Sign staff token
+    staffToken = jwt.sign(
+      { id: staffUser.id, role: staffUser.role },
+      process.env.JWT_SECRET || "fallback-secret-for-dev"
+    );
+
+    // Create a task assigned by manager to staff
+    task = await db.task.create({
+      data: {
+        id: `task-${suffix}`,
+        title: "Test REQ-008 Alerting",
+        description: "Test description",
+        priority: "medium",
+        status: "assigned",
+        assignedToId: staffUser.id,
+        assignedById: managerUser.id,
+        dueDate: new Date(),
+      },
+    });
+  });
+
+  it("should trigger manager notification when staff updates task status", async () => {
+    // Clear notifications for manager first
+    await db.notification.deleteMany({ where: { userId: managerUser.id } });
+
+    await request(app)
+      .patch(`/api/tasks/${task.id}/status`)
+      .set("Authorization", `Bearer ${staffToken}`)
+      .send({ status: "in_progress" })
+      .expect(200);
+
+    // Check notification queue of manager
+    const notifications = await db.notification.findMany({
+      where: { userId: managerUser.id },
+    });
+
+    expect(notifications.length).toBeGreaterThan(0);
+    const updateNotification = notifications.find((n) => n.title === "Task Status Updated");
+    expect(updateNotification).toBeDefined();
+    expect(updateNotification?.message).toContain("in_progress");
+  });
+
+  it("should trigger manager notification when staff comments on the task", async () => {
+    // Clear notifications for manager first
+    await db.notification.deleteMany({ where: { userId: managerUser.id } });
+
+    await request(app)
+      .post(`/api/tasks/${task.id}/comments`)
+      .set("Authorization", `Bearer ${staffToken}`)
+      .send({ userId: staffUser.id, text: "Adding a comments updates manager" })
+      .expect(201);
+
+    // Check notification queue of manager
+    const notifications = await db.notification.findMany({
+      where: { userId: managerUser.id },
+    });
+
+    expect(notifications.length).toBeGreaterThan(0);
+    const commentNotification = notifications.find((n) => n.title === "New Task Comment");
+    expect(commentNotification).toBeDefined();
+    expect(commentNotification?.message).toContain("commented on task");
+  });
+});
+

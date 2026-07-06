@@ -263,6 +263,23 @@ router.post("/:id/comments", async (req, res) => {
       text,
     },
   });
+
+  if (user && user.role === "STAFF" && task.assignedById) {
+    try {
+      const notification = await db.notification.create({
+        data: {
+          userId: task.assignedById,
+          title: "New Task Comment",
+          message: `Staff member ${user.name} commented on task "${task.title}".`,
+          category: "update",
+        },
+      });
+      sendNotificationToUser(task.assignedById, notification);
+    } catch (err) {
+      console.error("Failed to create comment notification", err);
+    }
+  }
+
   res.status(201).json(comment);
 });
 
@@ -335,6 +352,23 @@ router.patch("/:id/status", async (req, res) => {
     where: { id: req.params.id },
     data: { status },
   });
+
+  if (user && user.role === "STAFF" && task.assignedById) {
+    try {
+      const notification = await db.notification.create({
+        data: {
+          userId: task.assignedById,
+          title: "Task Status Updated",
+          message: `Staff member ${user.name} has updated the status of task "${task.title}" to "${status}".`,
+          category: "update",
+        },
+      });
+      sendNotificationToUser(task.assignedById, notification);
+    } catch (err) {
+      console.error("Failed to create task status update notification", err);
+    }
+  }
+
   res.json(parseTask({ ...task, comments: [], submissions: [] }));
 });
 
