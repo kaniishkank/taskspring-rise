@@ -52,9 +52,12 @@ function CalendarPage() {
   const [copiedWebcal, setCopiedWebcal] = useState(false);
   const [copiedHttp, setCopiedHttp] = useState(false);
 
-  const apiBaseUrl = (import.meta.env.VITE_API_URL ?? "http://localhost:4000/api").replace(/\/api$/, "");
-  const webcalUrl = currentUser?.calendarToken ? `${apiBaseUrl.replace(/^http(s)?:/, "webcal:")}/api/calendar/feed/${currentUser.calendarToken}` : "";
-  const httpUrl = currentUser?.calendarToken ? `${apiBaseUrl}/api/calendar/feed/${currentUser.calendarToken}` : "";
+  const host = typeof window !== "undefined"
+    ? (window.location.host === "localhost:8080" ? "localhost:4000" : window.location.host)
+    : "localhost:4000";
+
+  const webcalUrl = currentUser?.calendarToken ? `webcal://${host}/api/calendar/feed/${currentUser.calendarToken}` : "";
+  const httpUrl = currentUser?.calendarToken ? `http://${host}/api/calendar/feed/${currentUser.calendarToken}` : "";
 
   // Quick add task form states
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -392,24 +395,56 @@ function CalendarPage() {
           </DialogHeader>
           <div className="space-y-4 py-4 text-sm">
             <p className="text-muted-foreground">
-              Subscribe to your live TaskFlow tasks feed directly in external desktop or mobile calendar clients using the links below.
+              Automatically sync your secure background feed containing your tasks (Staff see only assigned items; Managers/Operation see organizational summaries) directly into your native calendar application.
             </p>
 
+            {/* Direct Sync Actions (Section 1) */}
+            <div className="flex flex-col gap-2 rounded-lg bg-primary/5 p-4 border border-primary/10">
+              <p className="font-semibold text-foreground text-xs uppercase tracking-wider">Quick Actions</p>
+              
+              <Button asChild className="w-full justify-start h-10 font-medium">
+                <a href={webcalUrl}>
+                  <Calendar className="mr-2 h-4 w-4 shrink-0" />
+                  One-Click Native Sync
+                </a>
+              </Button>
+
+              <Button asChild variant="outline" className="w-full justify-start h-10 font-medium border-muted-foreground/20">
+                <a
+                  href={`https://calendar.google.com/calendar/render?cid=${encodeURIComponent(httpUrl)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <svg className="mr-2 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '16px', height: '16px' }}>
+                    <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z" fill="#4285F4"/>
+                    <path d="M20 9.5H4V18C4 19.1 4.9 20 6 20H18C19.1 20 20 19.1 20 18V9.5Z" fill="#34A853"/>
+                    <path d="M20 9.5H4V5C4 3.9 4.9 3 6 3H18C19.1 3 20 3.9 20 5V9.5Z" fill="#EA4335"/>
+                    <path d="M12 5V15" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                    <path d="M7 10H17" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  Sync with Google Calendar
+                </a>
+              </Button>
+            </div>
+
+            {/* Manual Subscription Links (Section 2) */}
             <div className="space-y-3">
+              <p className="font-semibold text-foreground text-xs uppercase tracking-wider text-muted-foreground pt-1">Manual Subscription Links</p>
+              
               {/* Webcal option */}
               <div className="space-y-1.5">
-                <Label className="font-semibold text-foreground">Option 1: Webcal Protocol (Recommended for Apple Calendar / Outlook Desktop)</Label>
+                <Label className="text-xs font-medium text-muted-foreground">Webcal Link (For Apple Calendar / Outlook Desktop)</Label>
                 <div className="flex gap-2">
                   <Input
                     readOnly
                     value={webcalUrl}
-                    className="bg-muted/30 font-mono text-[11px] select-all flex-1 h-9"
+                    className="bg-muted/30 font-mono text-[10px] select-all flex-1 h-8"
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-9 shrink-0 gap-1"
+                    className="h-8 shrink-0 px-3 text-xs gap-1"
                     onClick={() => {
                       navigator.clipboard.writeText(webcalUrl);
                       setCopiedWebcal(true);
@@ -417,7 +452,7 @@ function CalendarPage() {
                       toast.success("Webcal URL copied!");
                     }}
                   >
-                    {copiedWebcal ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedWebcal ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
                     {copiedWebcal ? "Copied" : "Copy"}
                   </Button>
                 </div>
@@ -425,18 +460,18 @@ function CalendarPage() {
 
               {/* HTTP option */}
               <div className="space-y-1.5">
-                <Label className="font-semibold text-foreground">Option 2: HTTP Feed (For Google Calendar / Web Clients)</Label>
+                <Label className="text-xs font-medium text-muted-foreground">HTTP Link (For Google Calendar / Web Clients)</Label>
                 <div className="flex gap-2">
                   <Input
                     readOnly
                     value={httpUrl}
-                    className="bg-muted/30 font-mono text-[11px] select-all flex-1 h-9"
+                    className="bg-muted/30 font-mono text-[10px] select-all flex-1 h-8"
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-9 shrink-0 gap-1"
+                    className="h-8 shrink-0 px-3 text-xs gap-1"
                     onClick={() => {
                       navigator.clipboard.writeText(httpUrl);
                       setCopiedHttp(true);
@@ -444,19 +479,19 @@ function CalendarPage() {
                       toast.success("HTTP URL copied!");
                     }}
                   >
-                    {copiedHttp ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedHttp ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
                     {copiedHttp ? "Copied" : "Copy"}
                   </Button>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg bg-muted/40 p-3.5 border text-xs text-muted-foreground space-y-2">
-              <p className="font-bold text-foreground">How to Subscribe:</p>
+            <div className="rounded-lg bg-muted/40 p-3 border text-xs text-muted-foreground space-y-1.5">
+              <p className="font-bold text-foreground">How to Subscribe Manually:</p>
               <ul className="list-disc list-inside space-y-1">
-                <li><strong>Apple Calendar</strong>: File ➔ New Calendar Subscription... ➔ Paste the <em>Webcal link</em>.</li>
-                <li><strong>Outlook Desktop</strong>: Add Calendar ➔ From Internet ➔ Paste the <em>Webcal link</em>.</li>
-                <li><strong>Google Calendar / Web Outlook</strong>: Other Calendars (+) ➔ From URL ➔ Paste the <em>HTTP link</em>.</li>
+                <li><strong>Apple Calendar</strong>: File ➔ New Calendar Subscription... ➔ Paste Webcal link.</li>
+                <li><strong>Outlook Desktop</strong>: Add Calendar ➔ From Internet ➔ Paste Webcal link.</li>
+                <li><strong>Google Calendar / Web Outlook</strong>: Other Calendars (+) ➔ From URL ➔ Paste HTTP link.</li>
               </ul>
               <div className="mt-2 border-t pt-2 text-[10px] leading-relaxed">
                 <strong className="text-warning-foreground dark:text-warning">Note on Localhost:</strong> Standard cloud-based calendar services (Google Calendar Web, Outlook Web) cannot fetch data from a local `localhost` IP address. For full cloud sync, you must expose your local port via a tunnel service (e.g. ngrok) or run the server on a public domain. Local calendar apps (like Apple Calendar or Windows Calendar) will sync directly.
