@@ -481,6 +481,7 @@ function CalendarPage() {
                 <Label className="text-xs font-medium text-muted-foreground">HTTP Link (For Google Calendar / Web Clients)</Label>
                 <div className="flex gap-2">
                   <Input
+                    id="ical-link"
                     readOnly
                     value={httpUrl}
                     className="bg-muted/30 font-mono text-[10px] select-all flex-1 h-8"

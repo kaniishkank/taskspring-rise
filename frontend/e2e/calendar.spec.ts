@@ -53,11 +53,11 @@ test.describe("MGG TaskFlow Calendar Synchronization Suite", () => {
   });
 
   test("should trigger download of .ics calendar file when Sync Automatically is clicked", async ({ page }) => {
-    // Navigate directly to user settings
-    await page.goto("http://localhost:8080/settings");
+    // Navigate directly to calendar view
+    await page.goto("http://localhost:8080/calendar");
 
-    // Click the Calendar tab inside settings tab group
-    await page.click('button:has-text("Calendar Sync")');
+    // Click the Sync to Device button to open the modal
+    await page.click('button:has-text("Sync to Device")');
 
     // Wait for the download event and trigger it by navigating directly to the HTTP subscription URL
     const icalUrl = await page.inputValue('#ical-link');
