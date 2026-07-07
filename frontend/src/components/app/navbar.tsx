@@ -7,6 +7,7 @@ import {
   LogOut,
   User as UserIcon,
   Settings as SettingsIcon,
+  BellRing,
   PanelLeftClose,
   PanelLeftOpen,
   X,
@@ -23,6 +24,7 @@ import { api } from "@/lib/api";
 import type { Notification, User, Task } from "@/lib/types";
 import { UserAvatar } from "@/components/app/user-avatar";
 import { downloadBase64File, getBlobFromBase64, openMockFile, viewBase64File } from "@/lib/utils";
+import { requestFirebaseNotificationPermission } from "@/lib/firebase";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -384,6 +386,15 @@ export function Navbar({
             <DropdownMenuItem onClick={() => void navigate({ to: "/settings" })}>
               <SettingsIcon className="mr-2 h-4 w-4" />Settings
             </DropdownMenuItem>
+            {typeof window !== 'undefined' && "Notification" in window && Notification.permission !== "granted" && (
+              <DropdownMenuItem onClick={() => {
+                void requestFirebaseNotificationPermission().then(() => {
+                  toast.success("Push notifications enabled!");
+                });
+              }}>
+                <BellRing className="mr-2 h-4 w-4" />Enable Notifications
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {

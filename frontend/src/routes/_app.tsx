@@ -29,9 +29,6 @@ function AppLayout() {
       navigate({ to: "/login", replace: true });
     } else {
       setIsAuth(true);
-      if ("Notification" in window && Notification.permission === "default") {
-        void Notification.requestPermission();
-      }
     }
   }, [navigate]);
 
@@ -165,9 +162,6 @@ function AppLayout() {
               console.error("[SSE] Failed to parse SSE message", err, event.data);
             }
           };
-
-          console.log("[Firebase] Calling requestFirebaseNotificationPermission()...");
-          void requestFirebaseNotificationPermission();
         }
       } catch (err) {
         console.error("[SSE] Failed to initialize SSE completely", err);
