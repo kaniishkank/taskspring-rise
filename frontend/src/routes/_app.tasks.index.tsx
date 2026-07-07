@@ -376,7 +376,9 @@ function TasksPage() {
                   <th className="px-4 py-3 font-medium">Task ID</th>
                   <th className="px-4 py-3 font-medium">Title</th>
                   <th className="px-4 py-3 font-medium">Priority</th>
-                  <th className="px-4 py-3 font-medium">Assigned By</th>
+                  <th className="px-4 py-3 font-medium">
+                    {currentUser?.role === "MANAGER" ? "Assigned To" : "Assigned By"}
+                  </th>
                   <th className="px-4 py-3 font-medium">Due date</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 text-right font-medium">Actions</th>
@@ -384,7 +386,9 @@ function TasksPage() {
               </thead>
               <tbody>
                 {paginated.map((t) => {
-                  const u = users.find((user) => user.id === t.assignedBy);
+                  const isManager = currentUser?.role === "MANAGER";
+                  const targetUserId = isManager ? t.assignedTo : t.assignedBy;
+                  const u = users.find((user) => user.id === targetUserId);
                   return (
                     <tr key={t.id} className="border-b last:border-0 hover:bg-accent/40">
                       <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{`TSK-${t.id.slice(-4).toUpperCase()}`}</td>
@@ -395,10 +399,19 @@ function TasksPage() {
                       </td>
                       <td className="px-4 py-3"><PriorityBadge priority={t.priority} /></td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                           <UserAvatar name={u?.name} avatar={u?.avatar} size={26} />
-                          <span className="truncate">{u?.name}</span>
-                        </div>
+                        {isManager && !t.assignedTo ? (
+                          <span className="text-muted-foreground italic text-xs">Not Assigned</span>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                             <UserAvatar name={u?.name} avatar={u?.avatar} size={26} />
+                             <div className="flex flex-col min-w-0">
+                               <span className="truncate leading-tight">{u?.name || "Unknown"}</span>
+                               {isManager && u?.email && (
+                                 <span className="text-[10px] text-muted-foreground truncate leading-tight">{u.email}</span>
+                               )}
+                             </div>
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{format(new Date(t.dueDate), "MMM d, yyyy")}</td>
                       <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
@@ -471,7 +484,9 @@ function TasksPage() {
                 </div>
                 <div className="flex flex-1 flex-col gap-2 overflow-y-auto max-h-[600px] min-h-[250px]">
                   {colTasks.map((t) => {
-                    const u = users.find((user) => user.id === t.assignedBy);
+                    const isManager = currentUser?.role === "MANAGER";
+                    const targetUserId = isManager ? t.assignedTo : t.assignedBy;
+                    const u = users.find((user) => user.id === targetUserId);
                     return (
                       <div
                         key={t.id}
@@ -500,11 +515,22 @@ function TasksPage() {
                           {t.description}
                         </p>
                         <div className="mt-4 flex items-center justify-between pt-2 border-t">
-                          <div className="flex items-center gap-1.5">
-                             <UserAvatar name={u?.name} avatar={u?.avatar} size={20} />
-                            <span className="max-w-[100px] truncate text-[11px] text-muted-foreground">{u?.name}</span>
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-2">
+                            {isManager && !t.assignedTo ? (
+                              <span className="text-[11px] italic text-muted-foreground">Not Assigned</span>
+                            ) : (
+                              <>
+                                <UserAvatar name={u?.name} avatar={u?.avatar} size={20} />
+                                <div className="flex flex-col min-w-0">
+                                  <span className="max-w-[100px] truncate text-[11px] leading-tight text-muted-foreground">{u?.name || "Unknown"}</span>
+                                  {isManager && u?.email && (
+                                    <span className="max-w-[100px] truncate text-[9px] leading-tight text-muted-foreground/70">{u.email}</span>
+                                  )}
+                                </div>
+                              </>
+                            )}
                           </div>
-                          <span className="text-[10px] font-medium text-muted-foreground">
+                          <span className="text-[10px] font-medium text-muted-foreground shrink-0">
                             {format(new Date(t.dueDate), "MMM d")}
                           </span>
                         </div>

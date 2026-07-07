@@ -331,7 +331,9 @@ function Dashboard() {
             .filter((t) => currentUser?.role !== "STAFF" || t.assignedTo === currentUser?.id)
             .slice(0, 5)
             .map((t) => {
-              const u = users.find((user) => user.id === t.assignedBy);
+              const isManager = currentUser?.role === "MANAGER";
+              const targetUserId = isManager ? t.assignedTo : t.assignedBy;
+              const u = users.find((user) => user.id === targetUserId);
               const due = new Date(t.dueDate);
               const overdueTask = isBefore(due, new Date()) && !isToday(due);
               return (
@@ -349,8 +351,14 @@ function Dashboard() {
                     <PriorityBadge priority={t.priority} />
                     <StatusBadge status={t.status} />
                     <div className="hidden items-center gap-2 md:flex">
-                      <UserAvatar name={u?.name} avatar={u?.avatar} size={28} />
-                      <span className="text-sm">{u?.name}</span>
+                      {isManager && !t.assignedTo ? (
+                        <span className="text-sm italic text-muted-foreground">Not Assigned</span>
+                      ) : (
+                        <>
+                          <UserAvatar name={u?.name} avatar={u?.avatar} size={28} />
+                          <span className="text-sm">{u?.name || "Unknown"}</span>
+                        </>
+                      )}
                     </div>
                   </Link>
                 </li>
