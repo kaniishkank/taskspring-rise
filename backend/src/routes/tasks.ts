@@ -115,7 +115,7 @@ async function getAuthUser(req: AuthRequest) {
  * Parses a raw database task object, safely transforming JSON strings 
  * (like attachments, files, links) into parsed arrays.
  */
-function parseTask(task: any) {
+export function parseTask(task: any) {
   const assignedTo = task.assignedTo?.id ?? task.assignedToId;
   const assignedBy = task.assignedBy?.id ?? task.assignedById;
 
