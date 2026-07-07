@@ -61,20 +61,8 @@ function CalendarPage() {
   const httpUrl = currentUser?.calendarToken ? `${protocol}//${baseHost}/api/calendar/feed/${currentUser.calendarToken}` : "";
 
   const getGoogleUrl = () => {
-    if (typeof window === "undefined") return "";
-    if (window.location.hostname === "localhost") {
-      const activeTask = tasks.find(t => !["completed", "approved"].includes(t.status)) || tasks[0];
-      if (activeTask) {
-        const dueDateIso = new Date(activeTask.dueDate).toISOString().replace(/-|:|\.\d\d\d/g, "");
-        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(activeTask.title)}&details=${encodeURIComponent(activeTask.description || '')}&dates=${dueDateIso}/${dueDateIso}`;
-      }
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(10, 0, 0, 0);
-      const defaultIso = tomorrow.toISOString().replace(/-|:|\.\d\d\d/g, "");
-      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Final Client Presentation & Deliverable Review")}&details=${encodeURIComponent("Complete walkthrough of REQ-003, REQ-007, and REQ-008 with the stakeholders.")}&dates=${defaultIso}/${defaultIso}`;
-    }
-    return `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(httpUrl)}`;
+    if (!httpUrl) return "";
+    return `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(httpUrl)}`;
   };
 
   // Quick add task form states
@@ -526,7 +514,7 @@ function CalendarPage() {
                 <li><strong>Google Calendar / Web Outlook</strong>: Other Calendars (+) ➔ From URL ➔ Paste HTTP link.</li>
               </ul>
               <div className="mt-2 border-t pt-2 text-[10px] leading-relaxed">
-                <strong className="text-warning-foreground dark:text-warning">Note on Localhost:</strong> Standard cloud-based calendar services (Google Calendar Web, Outlook Web) cannot fetch data from a local `localhost` IP address. For full cloud sync, you must expose your local port via a tunnel service (e.g. ngrok) or run the server on a public domain. Local calendar apps (like Apple Calendar or Windows Calendar) will sync directly.
+                <strong className="text-warning-foreground dark:text-warning">Note on Localhost:</strong> Standard cloud-based calendar services (Google Calendar Web, Outlook Web) cannot fetch data from a local `localhost` IP address. For full cloud sync during development, you must expose your local port via a secure tunnel (e.g. running `ngrok http 4000` and utilizing that public address inside the feed string context). Local calendar apps (like Apple Calendar or Windows Calendar) will sync directly.
               </div>
             </div>
           </div>
