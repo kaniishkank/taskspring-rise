@@ -138,8 +138,12 @@ router.get("/", async (req, res) => {
   const where: any = {};
 
   const user = await getAuthUser(req);
-  if (user && user.role === "STAFF") {
-    where.assignedToId = user.id;
+  if (user) {
+    if (user.role === "STAFF") {
+      where.assignedToId = user.id;
+    } else if (user.role === "MANAGER") {
+      where.assignedById = user.id;
+    }
   }
 
   if (status && status !== "all") where.status = status;
@@ -178,8 +182,13 @@ router.get("/:id", async (req, res) => {
   if (!task) return res.status(404).json({ error: "Task not found" });
 
   const user = await getAuthUser(req);
-  if (user && user.role === "STAFF" && task.assignedToId !== user.id) {
-    return res.status(403).json({ error: "Access denied. You do not have permission to view this task." });
+  if (user) {
+    if (user.role === "STAFF" && task.assignedToId !== user.id) {
+      return res.status(403).json({ error: "Access denied. You do not have permission to view this task." });
+    }
+    if (user.role === "MANAGER" && task.assignedById !== user.id) {
+      return res.status(403).json({ error: "Access denied. You do not have permission to view this task." });
+    }
   }
 
   res.json(parseTask(task));
