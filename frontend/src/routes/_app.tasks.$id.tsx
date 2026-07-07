@@ -165,7 +165,7 @@ function TaskDetail() {
       </Link>
       <PageHeader
         title={task.title}
-        description={`${task.id} · Created ${format(new Date(task.createdAt), "MMM d, yyyy")}`}
+        description={`${`TSK-${task.id.slice(-4).toUpperCase()}`} · Created ${format(new Date(task.createdAt), "MMM d, yyyy")}`}
         actions={
           showReviewActions && (
             <div className="flex gap-2">

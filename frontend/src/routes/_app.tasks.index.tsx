@@ -387,7 +387,7 @@ function TasksPage() {
                   const u = users.find((user) => user.id === t.assignedTo);
                   return (
                     <tr key={t.id} className="border-b last:border-0 hover:bg-accent/40">
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{t.id}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{`TSK-${t.id.slice(-4).toUpperCase()}`}</td>
                       <td className="px-4 py-3">
                         <Link to="/tasks/$id" params={{ id: t.id }} className="font-medium hover:underline">
                           {t.title}
@@ -480,7 +480,7 @@ function TasksPage() {
                         className="group relative flex cursor-grab flex-col rounded-lg border bg-card p-4 shadow-sm hover:shadow-md transition active:cursor-grabbing hover:-translate-y-0.5"
                       >
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          <span className="font-mono">{t.id}</span>
+                          <span className="font-mono">{`TSK-${t.id.slice(-4).toUpperCase()}`}</span>
                           <div className="flex items-center gap-1">
                             <PriorityBadge priority={t.priority} />
                             {currentUser?.role !== "STAFF" && (

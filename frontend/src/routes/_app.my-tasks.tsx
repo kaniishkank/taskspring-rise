@@ -69,7 +69,7 @@ function MyTasks() {
               className="group rounded-xl border bg-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span className="font-mono">{t.id}</span>
+                <span className="font-mono">{`TSK-${t.id.slice(-4).toUpperCase()}`}</span>
                 <PriorityBadge priority={t.priority} />
               </div>
               <h3 className="mt-2 line-clamp-2 text-base font-semibold group-hover:text-primary">{t.title}</h3>
