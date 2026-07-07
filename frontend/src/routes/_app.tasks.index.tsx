@@ -376,7 +376,7 @@ function TasksPage() {
                   <th className="px-4 py-3 font-medium">Task ID</th>
                   <th className="px-4 py-3 font-medium">Title</th>
                   <th className="px-4 py-3 font-medium">Priority</th>
-                  <th className="px-4 py-3 font-medium">Assigned to</th>
+                  <th className="px-4 py-3 font-medium">Assigned By</th>
                   <th className="px-4 py-3 font-medium">Due date</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 text-right font-medium">Actions</th>
@@ -384,7 +384,7 @@ function TasksPage() {
               </thead>
               <tbody>
                 {paginated.map((t) => {
-                  const u = users.find((user) => user.id === t.assignedTo);
+                  const u = users.find((user) => user.id === t.assignedBy);
                   return (
                     <tr key={t.id} className="border-b last:border-0 hover:bg-accent/40">
                       <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{`TSK-${t.id.slice(-4).toUpperCase()}`}</td>
@@ -471,7 +471,7 @@ function TasksPage() {
                 </div>
                 <div className="flex flex-1 flex-col gap-2 overflow-y-auto max-h-[600px] min-h-[250px]">
                   {colTasks.map((t) => {
-                    const u = users.find((user) => user.id === t.assignedTo);
+                    const u = users.find((user) => user.id === t.assignedBy);
                     return (
                       <div
                         key={t.id}

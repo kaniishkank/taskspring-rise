@@ -331,7 +331,7 @@ function Dashboard() {
             .filter((t) => currentUser?.role !== "STAFF" || t.assignedTo === currentUser?.id)
             .slice(0, 5)
             .map((t) => {
-              const u = users.find((user) => user.id === t.assignedTo);
+              const u = users.find((user) => user.id === t.assignedBy);
               const due = new Date(t.dueDate);
               const overdueTask = isBefore(due, new Date()) && !isToday(due);
               return (
