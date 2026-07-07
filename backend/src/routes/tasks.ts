@@ -1,4 +1,5 @@
 import { Router } from "express";
+import crypto from "crypto";
 import { db } from "../db.js";
 import { authenticate, AuthRequest } from "../middleware/auth.js";
 import { sendNotificationToUser } from "./notifications.js";
@@ -194,6 +195,7 @@ router.post("/", async (req, res) => {
 
   const task = await db.task.create({
     data: {
+      id: `TSK-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
       title,
       description,
       priority,
@@ -209,12 +211,26 @@ router.post("/", async (req, res) => {
     const notification = await db.notification.create({
       data: {
         userId: assignedToId,
+        taskId: task.id,
         title: "New Task Assigned",
         message: `You have been assigned a new task: "${title}". Due date: ${new Date(dueDate).toLocaleDateString()}.`,
         category: "assignment",
       },
+      include: {
+        task: {
+          include: {
+            assignedBy: true,
+            assignedTo: true,
+            comments: true,
+            submissions: true,
+          },
+        },
+      },
     });
-    sendNotificationToUser(assignedToId, notification);
+    sendNotificationToUser(assignedToId, {
+      ...notification,
+      task: notification.task ? parseTask(notification.task) : null,
+    });
   } catch (err) {
     console.error("Failed to create task notification", err);
   }
@@ -269,12 +285,26 @@ router.post("/:id/comments", async (req, res) => {
       const notification = await db.notification.create({
         data: {
           userId: task.assignedById,
+          taskId: task.id,
           title: "New Task Comment",
           message: `Staff member ${user.name} commented on task "${task.title}".`,
           category: "update",
         },
+        include: {
+          task: {
+            include: {
+              assignedBy: true,
+              assignedTo: true,
+              comments: true,
+              submissions: true,
+            },
+          },
+        },
       });
-      sendNotificationToUser(task.assignedById, notification);
+      sendNotificationToUser(task.assignedById, {
+      ...notification,
+      task: notification.task ? parseTask(notification.task) : null,
+    });
     } catch (err) {
       console.error("Failed to create comment notification", err);
     }
@@ -318,12 +348,26 @@ router.post("/:id/submissions", async (req, res) => {
       const notification = await db.notification.create({
         data: {
           userId: updatedTask.assignedById,
+          taskId: updatedTask.id,
           title: "Task Submission Received",
           message: `Staff has submitted task "${updatedTask.title}" for your review.`,
           category: "approval",
         },
+        include: {
+          task: {
+            include: {
+              assignedBy: true,
+              assignedTo: true,
+              comments: true,
+              submissions: true,
+            },
+          },
+        },
       });
-      sendNotificationToUser(updatedTask.assignedById, notification);
+      sendNotificationToUser(updatedTask.assignedById, {
+      ...notification,
+      task: notification.task ? parseTask(notification.task) : null,
+    });
       console.log(`[Tasks] Submission notification sent to manager ${updatedTask.assignedById}`);
     }
   } catch (err) {
@@ -358,12 +402,26 @@ router.patch("/:id/status", async (req, res) => {
       const notification = await db.notification.create({
         data: {
           userId: task.assignedById,
+          taskId: task.id,
           title: "Task Status Updated",
           message: `Staff member ${user.name} has updated the status of task "${task.title}" to "${status}".`,
           category: "update",
         },
+        include: {
+          task: {
+            include: {
+              assignedBy: true,
+              assignedTo: true,
+              comments: true,
+              submissions: true,
+            },
+          },
+        },
       });
-      sendNotificationToUser(task.assignedById, notification);
+      sendNotificationToUser(task.assignedById, {
+      ...notification,
+      task: notification.task ? parseTask(notification.task) : null,
+    });
     } catch (err) {
       console.error("Failed to create task status update notification", err);
     }
@@ -426,12 +484,26 @@ router.patch("/:id/submissions/:submissionId", async (req, res) => {
     const notification = await db.notification.create({
       data: {
         userId: task.assignedToId,
+        taskId: task.id,
         title: notificationTitle,
         message: `${notificationMsg} (Task: "${task.title}").`,
         category: notificationCategory,
       },
+      include: {
+        task: {
+          include: {
+            assignedBy: true,
+            assignedTo: true,
+            comments: true,
+            submissions: true,
+          },
+        },
+      },
     });
-    sendNotificationToUser(task.assignedToId, notification);
+    sendNotificationToUser(task.assignedToId, {
+      ...notification,
+      task: notification.task ? parseTask(notification.task) : null,
+    });
   } catch (err) {
     console.error("Failed to create review notification", err);
   }
@@ -444,6 +516,29 @@ router.patch("/:id/submissions/:submissionId", async (req, res) => {
     },
     task,
   });
+});
+
+/**
+ * @route DELETE /:id
+ * @desc Deletes a task and its associated comments and submissions.
+ */
+router.delete("/:id", async (req: AuthRequest, res) => {
+  const user = await getAuthUser(req);
+  if (!user || user.role === "STAFF") {
+    return res.status(403).json({ error: "Access denied. Only managers can delete tasks." });
+  }
+
+  try {
+    await db.$transaction([
+      db.comment.deleteMany({ where: { taskId: req.params.id } }),
+      db.submission.deleteMany({ where: { taskId: req.params.id } }),
+      db.task.delete({ where: { id: req.params.id } }),
+    ]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Failed to delete task:", error);
+    res.status(500).json({ error: "Failed to delete task" });
+  }
 });
 
 export default router;

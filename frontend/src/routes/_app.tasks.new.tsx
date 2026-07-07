@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_app/tasks/new")({
 
 function NewTaskPage() {
   const nav = useNavigate();
-  const [files, setFiles] = useState<string[]>([]);
+  const [files, setFiles] = useState<{name: string, size: string, content?: string}[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
@@ -67,7 +67,7 @@ function NewTaskPage() {
             dueDate: new Date(dueDate).toISOString(),
             assignedToId: userId,
             assignedById: currentUser?.id ?? "m1", // fallback to principal if not logged in
-            attachments: files.map((name) => ({ name, size: "1.2 MB" })),
+            attachments: files,
           })
         )
       );
@@ -123,15 +123,27 @@ function NewTaskPage() {
               <div className="text-sm font-medium">Drop files here or click to upload</div>
               <div className="text-xs text-muted-foreground">PDF, DOC, PNG, JPG up to 10MB</div>
               <input type="file" multiple className="hidden" onChange={(e) => {
-                const f = Array.from(e.target.files ?? []).map((f) => f.name);
-                setFiles((prev) => [...prev, ...f]);
+                const flist = Array.from(e.target.files ?? []);
+                flist.forEach((file) => {
+                  if (file.size > 1024 * 1024 * 10) {
+                    toast.error(`File ${file.name} is too large (max 10MB)`);
+                    return;
+                  }
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    if (typeof reader.result === "string") {
+                      setFiles(prev => [...prev, { name: file.name, size: `${(file.size / 1024).toFixed(1)} KB`, content: reader.result as string }]);
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                });
               }} />
             </label>
             {files.length > 0 && (
               <ul className="mt-3 space-y-2">
                 {files.map((f, i) => (
                   <li key={i} className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
-                    <span className="flex items-center gap-2 truncate"><Paperclip className="h-4 w-4 text-muted-foreground" />{f}</span>
+                    <span className="flex items-center gap-2 truncate"><Paperclip className="h-4 w-4 text-muted-foreground" />{f.name}</span>
                     <button type="button" onClick={() => setFiles(files.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive">
                       <X className="h-4 w-4" />
                     </button>

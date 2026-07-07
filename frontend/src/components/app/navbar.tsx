@@ -10,6 +10,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   X,
+  Clock,
+  Clock3,
 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
@@ -20,7 +22,8 @@ import { useClock } from "@/hooks/use-clock";
 import { api } from "@/lib/api";
 import type { Notification, User, Task } from "@/lib/types";
 import { UserAvatar } from "@/components/app/user-avatar";
-import { openMockFile } from "@/lib/utils";
+import { downloadBase64File, getBlobFromBase64, openMockFile, viewBase64File } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,7 +54,21 @@ export function Navbar({
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [showClock, setShowClock] = useState(true);
+  const [showClock, setShowClock] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("mgg_show_clock") !== "false";
+    }
+    return true;
+  });
+  
+  const toggleClock = () => {
+    setShowClock(prev => {
+      const next = !prev;
+      localStorage.setItem("mgg_show_clock", String(next));
+      return next;
+    });
+  };
+  
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -98,18 +115,20 @@ export function Navbar({
     const list: { name: string; taskTitle: string; taskId: string }[] = [];
     tasks.forEach((t) => {
       if (t.attachments) {
-        t.attachments.forEach((a) => {
-          if (a.name.toLowerCase().includes(query)) {
-            list.push({ name: a.name, taskTitle: t.title, taskId: t.id });
+        t.attachments.forEach((a: any) => {
+          const aName = typeof a === 'object' && a !== null ? a.name : a;
+          if (aName && typeof aName === 'string' && aName.toLowerCase().includes(query)) {
+            list.push({ name: aName, taskTitle: t.title, taskId: t.id });
           }
         });
       }
       if (t.submissions) {
         t.submissions.forEach((s) => {
           if (s.files) {
-            s.files.forEach((f) => {
-              if (f.toLowerCase().includes(query)) {
-                list.push({ name: f, taskTitle: t.title, taskId: t.id });
+            s.files.forEach((f: any) => {
+              const fName = typeof f === 'object' && f !== null ? f.name : f;
+              if (fName && typeof fName === 'string' && fName.toLowerCase().includes(query)) {
+                list.push({ name: fName, taskTitle: t.title, taskId: t.id });
               }
             });
           }
@@ -138,14 +157,54 @@ export function Navbar({
         </Button>
       )}
       <div className="relative hidden max-w-md flex-1 md:block">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <button 
+          type="button"
+          onClick={() => {
+            if (searchQuery.trim().length > 0) {
+              if (matchingTasks.length > 0 && matchingTasks[0].id) {
+                void navigate({ to: "/tasks/$id", params: { id: matchingTasks[0].id } });
+              } else if (matchingUsers.length > 0 && matchingUsers[0].id) {
+                void navigate({ to: "/users", search: { highlightUserId: matchingUsers[0].id } });
+              } else if (matchingFiles.length > 0 && matchingFiles[0].taskId) {
+                void navigate({ to: "/tasks/$id", params: { id: matchingFiles[0].taskId } });
+              } else {
+                toast("No matching results found.");
+              }
+              setSearchQuery("");
+              setSearchFocused(false);
+              document.getElementById("global-search-input")?.blur();
+            }
+          }}
+          className="absolute left-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground z-10 transition-colors"
+          title="Search"
+        >
+          <Search className="h-4 w-4" />
+        </button>
         <Input
+          id="global-search-input"
           placeholder="Search tasks, people, files..."
           className="h-10 pl-9"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setSearchFocused(true)}
           onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && searchQuery.trim().length > 0) {
+              e.preventDefault();
+              if (matchingTasks.length > 0 && matchingTasks[0].id) {
+                void navigate({ to: "/tasks/$id", params: { id: matchingTasks[0].id } });
+              } else if (matchingUsers.length > 0 && matchingUsers[0].id) {
+                void navigate({ to: "/users", search: { highlightUserId: matchingUsers[0].id } });
+              } else if (matchingFiles.length > 0 && matchingFiles[0].taskId) {
+                void navigate({ to: "/tasks/$id", params: { id: matchingFiles[0].taskId } });
+              } else {
+                toast("No matching results found.");
+              }
+              setSearchQuery("");
+              setSearchFocused(false);
+              document.getElementById("global-search-input")?.blur();
+            }
+          }}
         />
         {searchFocused && searchQuery.trim().length > 0 && (
           <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-[400px] overflow-y-auto rounded-lg border border-border bg-popover p-2 shadow-lg backdrop-blur">
@@ -208,7 +267,14 @@ export function Navbar({
                         <li key={f.name}>
                           <button
                             type="button"
-                            onClick={() => openMockFile(f.name)}
+                            onClick={() => {
+                              if (f.taskId) {
+                                void navigate({ to: "/tasks/$id", params: { id: f.taskId } });
+                              } else {
+                                toast.error("Could not find the associated task.");
+                              }
+                              setSearchFocused(false);
+                            }}
                             className="flex w-full items-center justify-between rounded-md px-2 py-1.5 hover:bg-accent text-sm text-left"
                           >
                             <span className="truncate text-foreground hover:underline">{f.name}</span>
@@ -228,7 +294,7 @@ export function Navbar({
       </div>
       <div className="ml-auto flex items-center gap-1">
         {showClock && (
-          <div className="relative mr-2 hidden items-center gap-2 rounded-lg border border-border bg-muted/40 pl-3 pr-8 py-1.5 text-right md:flex group">
+          <div className="relative mr-2 hidden items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-1 text-right md:flex">
             <div className="leading-tight">
               <div className="font-mono text-sm font-semibold tracking-wider text-foreground">
                 {time}
@@ -237,15 +303,11 @@ export function Navbar({
                 {day} • {dateShort}
               </div>
             </div>
-            <button
-              onClick={() => setShowClock(false)}
-              className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground opacity-0 hover:bg-accent hover:text-foreground group-hover:opacity-100 transition-opacity"
-              title="Hide clock"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
           </div>
         )}
+        <Button variant="ghost" size="icon" onClick={toggleClock} aria-label={showClock ? "Hide Clock" : "Show Clock"} title={showClock ? "Hide Clock" : "Show Clock"} className="hidden md:flex">
+          {showClock ? <Clock className="h-4 w-4" /> : <Clock3 className="h-4 w-4 text-muted-foreground" />}
+        </Button>
         <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>

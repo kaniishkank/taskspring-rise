@@ -5,6 +5,53 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const isPreviewable = (name: string, content?: string): boolean => {
+  if (content) {
+    const mimeMatch = content.match(/:(.*?);/);
+    if (mimeMatch) {
+      const mime = mimeMatch[1].toLowerCase();
+      if (mime.startsWith('image/') || mime === 'application/pdf' || mime.startsWith('text/')) return true;
+    }
+  }
+  const ext = name.split('.').pop()?.toLowerCase();
+  return ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'txt'].includes(ext || '');
+};
+
+
+
+export const viewBase64File = async (content: string, name: string) => {
+  const c = content || `data:text/plain;base64,${btoa("Mock content for seeded file: " + name)}`;
+  try {
+    const res = await fetch(c);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const newWindow = window.open(url, "_blank");
+    if (!newWindow) {
+      console.error("Please allow popups to view files");
+    }
+  } catch (e) {
+    console.error("Failed to view file", e);
+  }
+};
+
+export const downloadBase64File = async (content: string, name: string) => {
+  const c = content || `data:text/plain;base64,${btoa("Mock content for seeded file: " + name)}`;
+  try {
+    const res = await fetch(c);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) {
+    console.error("Failed to download file", e);
+  }
+};
+
 export const openMockFile = (filename: string) => {
   if (!filename) return;
   const trimmed = filename.trim();

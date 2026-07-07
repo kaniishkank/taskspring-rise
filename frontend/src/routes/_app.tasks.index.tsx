@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Download, Filter, Plus, Search, List, LayoutGrid, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { Download, Filter, Plus, Search, List, LayoutGrid, AlertCircle, CheckCircle, Clock, Pencil, Trash2, Paperclip, X, Save, Send, Upload } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import type { Priority, TaskStatus, Task, User } from "@/lib/types";
 import { toast } from "sonner";
@@ -50,6 +59,21 @@ function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "board">("list");
   
+  // Dialog visibility
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Edit Form States
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editPriority, setEditPriority] = useState<string>("medium");
+  const [editDueDate, setEditDueDate] = useState("");
+  const [editAssignee, setEditAssignee] = useState("");
+  const [editFiles, setEditFiles] = useState<{name: string, size: string, content?: string}[]>([]);
+
   // Pagination
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 10;
@@ -214,6 +238,66 @@ function TasksPage() {
     }
   };
 
+  const openEdit = (t: Task) => {
+    setEditingTask(t);
+    setEditTitle(t.title);
+    setEditDescription(t.description);
+    setEditPriority(t.priority);
+    setEditDueDate(t.dueDate ? format(new Date(t.dueDate), "yyyy-MM-dd") : "");
+    setEditAssignee(t.assignedTo);
+    setEditFiles(t.attachments ?? []);
+    setIsEditOpen(true);
+  };
+
+  const openDelete = (t: Task) => {
+    setTaskToDelete(t);
+    setIsDeleteOpen(true);
+  };
+
+  const handleDeleteTask = async () => {
+    if (!taskToDelete) return;
+    setSaving(true);
+    try {
+      await api.deleteTask(taskToDelete.id);
+      toast.success("Task deleted successfully");
+      setIsDeleteOpen(false);
+      setTasks((prev) => prev.filter((t) => t.id !== taskToDelete.id));
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete task");
+    } finally {
+      setSaving(false);
+      setTaskToDelete(null);
+    }
+  };
+
+  const handleEditTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTask || !editTitle.trim() || !editAssignee || !editDueDate) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.updateTask(editingTask.id, {
+        title: editTitle,
+        description: editDescription,
+        priority: editPriority,
+        dueDate: new Date(editDueDate).toISOString(),
+        assignedToId: editAssignee,
+        attachments: editFiles,
+      });
+      toast.success("Task updated successfully");
+      setIsEditOpen(false);
+      void loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update task");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return <div className="rounded-xl border bg-card p-8 text-sm text-muted-foreground">Loading tasks…</div>;
   }
@@ -295,6 +379,7 @@ function TasksPage() {
                   <th className="px-4 py-3 font-medium">Assigned to</th>
                   <th className="px-4 py-3 font-medium">Due date</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -317,11 +402,21 @@ function TasksPage() {
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{format(new Date(t.dueDate), "MMM d, yyyy")}</td>
                       <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="inline-flex gap-1">
+                          {currentUser?.role !== "STAFF" && (
+                            <>
+                              <Button variant="ghost" size="icon" onClick={() => openEdit(t)} title="Edit task"><Pencil className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => openDelete(t)} title="Delete task" className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                            </>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">No tasks match your filters.</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-muted-foreground">No tasks match your filters.</td></tr>
                 )}
               </tbody>
             </table>
@@ -380,7 +475,15 @@ function TasksPage() {
                       >
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                           <span className="font-mono">{t.id}</span>
-                          <PriorityBadge priority={t.priority} />
+                          <div className="flex items-center gap-1">
+                            <PriorityBadge priority={t.priority} />
+                            {currentUser?.role !== "STAFF" && (
+                              <div className="flex items-center ml-1">
+                                <button type="button" onClick={(e) => { e.stopPropagation(); openEdit(t); }} className="p-1 hover:text-primary transition"><Pencil className="h-3 w-3" /></button>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); openDelete(t); }} className="p-1 hover:text-destructive transition"><Trash2 className="h-3 w-3" /></button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <h5 className="mt-2 text-sm font-semibold text-foreground group-hover:text-primary leading-snug">
                           <Link to="/tasks/$id" params={{ id: t.id }} className="hover:underline">
@@ -413,6 +516,134 @@ function TasksPage() {
           })}
         </div>
       )}
+
+      {/* Edit Task Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Task</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditTask} className="grid grid-cols-1 gap-6 md:grid-cols-2 pt-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="edit-title">Task title *</Label>
+                <Input
+                  id="edit-title"
+                  required
+                  className="mt-1.5"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-desc">Description</Label>
+                <Textarea
+                  id="edit-desc"
+                  rows={4}
+                  className="mt-1.5"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="mb-2 block text-sm font-medium">Attachments</Label>
+                <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed py-4 text-center transition hover:border-primary/50 hover:bg-accent/30">
+                  <Upload className="mb-2 h-4 w-4 text-muted-foreground" />
+                  <div className="text-xs font-medium">Click to upload files</div>
+                  <input type="file" multiple className="hidden" onChange={(e) => {
+                    const flist = Array.from(e.target.files ?? []);
+                    flist.forEach((file) => {
+                      if (file.size > 1024 * 1024 * 10) {
+                        toast.error(`File ${file.name} is too large (max 10MB)`);
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        if (typeof reader.result === "string") {
+                          setEditFiles(prev => [...prev, { name: file.name, size: `${(file.size / 1024).toFixed(1)} KB`, content: reader.result as string }]);
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    });
+                  }} />
+                </label>
+                {editFiles.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {editFiles.map((f, i) => (
+                      <li key={i} className="flex items-center justify-between rounded-md border bg-muted/30 px-2 py-1.5 text-xs">
+                        <span className="flex items-center gap-2 truncate"><Paperclip className="h-3 w-3 text-muted-foreground" />{f.name}</span>
+                        <button type="button" onClick={() => setEditFiles(editFiles.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <Label>Priority</Label>
+                <Select value={editPriority} onValueChange={setEditPriority}>
+                  <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-due">Due date *</Label>
+                <Input
+                  id="edit-due"
+                  type="date"
+                  className="mt-1.5"
+                  required
+                  value={editDueDate}
+                  onChange={(e) => setEditDueDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Assignee *</Label>
+                <Select value={editAssignee} onValueChange={setEditAssignee}>
+                  <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select assignee" /></SelectTrigger>
+                  <SelectContent>
+                    {users.filter(u => u.role === "STAFF").map(u => (
+                      <SelectItem key={u.id} value={u.id}>{u.name} ({u.department})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter className="md:col-span-2 pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)} disabled={saving}>Cancel</Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Task</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-sm text-foreground">
+            Are you sure you want to delete this task? This action cannot be undone.
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={saving}>Cancel</Button>
+            <Button type="button" variant="destructive" onClick={handleDeleteTask} disabled={saving}>
+              {saving ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

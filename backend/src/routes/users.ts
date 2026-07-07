@@ -86,6 +86,32 @@ router.put("/:id", async (req: AuthRequest, res) => {
   res.json(user);
 });
 
+/**
+ * @route DELETE /:id
+ * @desc Deletes an existing user and their associated data.
+ */
+router.delete("/:id", async (req: AuthRequest, res) => {
+  if (req.user?.role !== "MANAGER" && req.user?.role !== "OPERATION") {
+    return res.status(403).json({ error: "Forbidden: You do not have permission to delete users" });
+  }
+  if (req.user?.id === req.params.id) {
+    return res.status(400).json({ error: "You cannot delete your own account" });
+  }
 
+  try {
+    await db.$transaction([
+      db.notification.deleteMany({ where: { userId: req.params.id } }),
+      db.submission.deleteMany({ where: { userId: req.params.id } }),
+      db.comment.deleteMany({ where: { userId: req.params.id } }),
+      // Also delete any tasks assigned to or by this user to avoid constraint failures
+      db.task.deleteMany({ where: { OR: [{ assignedToId: req.params.id }, { assignedById: req.params.id }] } }),
+      db.user.delete({ where: { id: req.params.id } }),
+    ]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Failed to delete user:", error);
+    res.status(500).json({ error: "Failed to delete user" });
+  }
+});
 
 export default router;

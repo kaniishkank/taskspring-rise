@@ -53,7 +53,9 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  category: "assignment" | "reminder" | "approval" | "rejection";
+  category: "assignment" | "reminder" | "approval" | "rejection" | "update";
   read: boolean;
   at: string;
+  taskId?: string;
+  task?: Task & { assignedBy?: User, assignedTo?: User };
 }

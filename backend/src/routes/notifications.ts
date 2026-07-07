@@ -3,6 +3,7 @@ import { db } from "../db.js";
 import { authenticate, AuthRequest } from "../middleware/auth.js";
 import jwt from "jsonwebtoken";
 import { sendPushNotification } from "../services/push.js";
+import { parseTask } from "./tasks.js";
 
 const router = Router();
 
@@ -61,6 +62,16 @@ router.get("/startup", async (req, res) => {
         read: false,
         notifiedOnStartup: false,
       },
+      include: {
+        task: {
+          include: {
+            assignedBy: true,
+            assignedTo: true,
+            comments: true,
+            submissions: true,
+          }
+        }
+      },
       orderBy: { at: "desc" },
     });
 
@@ -92,7 +103,10 @@ router.get("/startup", async (req, res) => {
     }
 
     res.json({
-      notifications,
+      notifications: notifications.map(n => ({
+        ...n,
+        task: n.task ? parseTask(n.task) : null,
+      })),
       urgentTasks: urgentTasks.map((t) => ({
         id: t.id,
         title: t.title,
@@ -179,9 +193,22 @@ router.get("/", async (req, res) => {
 
   const notifications = await db.notification.findMany({
     where,
+    include: {
+      task: {
+        include: {
+          assignedBy: true,
+          assignedTo: true,
+          comments: true,
+          submissions: true,
+        }
+      }
+    },
     orderBy: { at: "desc" },
   });
-  res.json(notifications);
+  res.json(notifications.map(n => ({
+    ...n,
+    task: n.task ? parseTask(n.task) : null,
+  })));
 });
 
 router.patch("/read-all", async (req, res) => {

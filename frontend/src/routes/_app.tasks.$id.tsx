@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
-import { ArrowLeft, Calendar, CheckCircle2, MessageSquare, Paperclip, Send, User as UserIcon, XCircle } from "lucide-react";
+import { ArrowLeft, Calendar, CheckCircle2, Download, MessageSquare, Paperclip, Search, Send, User as UserIcon, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import type { Task, User } from "@/lib/types";
 import { toast } from "sonner";
-import { openMockFile } from "@/lib/utils";
+import { openMockFile, downloadBase64File, viewBase64File, isPreviewable } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/tasks/$id")({
   component: TaskDetail,
@@ -30,7 +30,7 @@ function TaskDetail() {
   const [commentText, setCommentText] = useState("");
   const [submissionNotes, setSubmissionNotes] = useState("");
   const [submissionLink, setSubmissionLink] = useState("");
-  const [submissionFiles, setSubmissionFiles] = useState<{name: string, content: string}[]>([]);
+  const [submissionFiles, setSubmissionFiles] = useState<{name: string, size: string, content: string}[]>([]);
   const [submittingWork, setSubmittingWork] = useState(false);
   const [reviewing, setReviewing] = useState(false);
 
@@ -84,7 +84,7 @@ function TaskDetail() {
       await api.createSubmission(task.id, {
         userId: currentUser.id,
         notes: submissionNotes,
-        files: submissionFiles.map(f => f.content), // Storing base64 strings directly in the JSON array for demo
+        files: submissionFiles,
         links: submissionLink ? [submissionLink] : [],
         status: "submitted",
       });
@@ -142,8 +142,8 @@ function TaskDetail() {
     return (
       <div className="grid place-items-center py-20 text-center">
         <div>
-          <h2 className="text-xl font-semibold text-destructive">Task Not Found</h2>
-          <p className="text-sm text-muted-foreground mt-1.5">This task may have been deleted or does not exist.</p>
+          <h2 className="text-xl font-semibold text-destructive">Item Not Found</h2>
+          <p className="text-sm text-muted-foreground mt-1.5">The requested item could not be found.</p>
           <Button asChild className="mt-6">
             <Link to="/tasks">Back to tasks</Link>
           </Button>
@@ -225,15 +225,32 @@ function TaskDetail() {
                   <ul className="space-y-2">
                     {task.attachments.map((a) => (
                       <li key={a.name} className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm">
-                        <button
-                          type="button"
-                          onClick={() => openMockFile(a.name)}
-                          className="flex items-center gap-2 hover:underline hover:text-primary transition text-left"
-                        >
+                        <div className="flex items-center gap-2">
                           <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <span className="font-medium">{a.name}</span>
-                        </button>
-                        <span className="text-xs text-muted-foreground">{a.size}</span>
+                          <span className="font-medium truncate max-w-[200px]" title={a.name}>{a.name}</span>
+                          <span className="text-xs text-muted-foreground ml-2">{a.size}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isPreviewable(a.name, a.content) && (
+                            <Button 
+                              variant="secondary" 
+                              size="sm" 
+                              className="h-7 text-xs"
+                              onClick={() => viewBase64File(a.content || "", a.name)}
+                            >
+                              View
+                            </Button>
+                          )}
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => downloadBase64File(a.content || "", a.name)}
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Download
+                          </Button>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -287,7 +304,7 @@ function TaskDetail() {
                           const reader = new FileReader();
                           reader.onload = () => {
                             if (typeof reader.result === "string") {
-                              setSubmissionFiles([{ name: file.name, content: reader.result }]);
+                              setSubmissionFiles([{ name: file.name, size: `${(file.size / 1024).toFixed(1)} KB`, content: reader.result }]);
                             }
                           };
                           reader.readAsDataURL(file);
@@ -372,17 +389,42 @@ function TaskDetail() {
                           <p className="mt-3 text-sm">{s.notes}</p>
                           {s.files && s.files.length > 0 && (
                             <div className="mt-3 flex flex-wrap gap-2">
-                              {s.files.map((f, i) => (
-                                <button
-                                  key={i}
-                                  type="button"
-                                  onClick={() => f.startsWith('data:') ? window.open(f) : openMockFile(f)}
-                                  className="inline-flex items-center gap-1 rounded-md border bg-primary/10 border-primary/20 hover:bg-primary/25 px-2 py-1 text-xs text-primary transition cursor-pointer"
-                                >
-                                  <Paperclip className="h-3 w-3 shrink-0" />
-                                  <span className="max-w-[150px] truncate">{f.startsWith('data:') ? 'Attachment' : f}</span>
-                                </button>
-                              ))}
+                              {s.files.map((f: any, i: number) => {
+                                const isObject = typeof f === 'object' && f !== null;
+                                const name = isObject ? f.name : f;
+                                const content = isObject ? f.content : "";
+                                
+                                return (
+                                  <div key={i} className="flex items-center gap-2 rounded-md border bg-primary/5 px-3 py-1.5 border-primary/20">
+                                    <Paperclip className="h-4 w-4 shrink-0 text-primary" />
+                                    <span className="max-w-[200px] truncate text-xs font-medium" title={name}>{name}</span>
+                                    {isObject && <span className="text-[10px] text-muted-foreground mr-2">{f.size}</span>}
+                                    
+                                    <div className="flex items-center gap-1 ml-auto">
+                                      {isPreviewable(name, content) && (
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon" 
+                                          className="h-6 w-6 text-primary hover:bg-primary/20"
+                                          title="View"
+                                          onClick={() => content ? viewBase64File(content, name) : openMockFile(name)}
+                                        >
+                                          <Search className="h-3 w-3" />
+                                        </Button>
+                                      )}
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6 text-primary hover:bg-primary/20"
+                                        title="Download"
+                                        onClick={() => content ? downloadBase64File(content, name) : openMockFile(name)}
+                                      >
+                                        <Download className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
                           {s.links && s.links.length > 0 && (

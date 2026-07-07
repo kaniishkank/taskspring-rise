@@ -128,6 +128,19 @@ export const api = {
     });
   },
 
+  async updateTask(id: string, payload: Partial<CreateTaskPayload> & { status?: string }) {
+    return request<Task>(`/tasks/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async deleteTask(id: string) {
+    return request<{ success: boolean }>(`/tasks/${id}`, {
+      method: "DELETE",
+    });
+  },
+
   async updateTaskStatus(id: string, status: string) {
     return request<Task>(`/tasks/${id}/status`, {
       method: "PATCH",
@@ -178,6 +191,12 @@ export const api = {
     return request<User>(`/users/${id}`, {
       method: "PUT",
       body: JSON.stringify(payload),
+    });
+  },
+
+  async deleteUser(id: string) {
+    return request<{ success: boolean }>(`/users/${id}`, {
+      method: "DELETE",
     });
   },
 

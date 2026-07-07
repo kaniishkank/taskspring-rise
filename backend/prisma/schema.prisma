@@ -45,6 +45,7 @@ model Task {
   attachments   String       @default("[]")
   comments      Comment[]
   submissions   Submission[]
+  notifications Notification[]
 }
 
 model Comment {
@@ -80,6 +81,8 @@ model Notification {
   at                DateTime @default(now())
   user              User?    @relation(fields: [userId], references: [id])
   userId            String?
+  task              Task?    @relation(fields: [taskId], references: [id])
+  taskId            String?
 }
 
 enum Role {

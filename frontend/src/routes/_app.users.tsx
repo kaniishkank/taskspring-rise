@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Pencil, Plus, Search, UserMinus } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Pencil, Plus, Search, UserMinus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/app/page-header";
@@ -28,7 +28,16 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
+type UsersSearch = {
+  highlightUserId?: string;
+};
+
 export const Route = createFileRoute("/_app/users")({
+  validateSearch: (search: Record<string, unknown>): UsersSearch => {
+    return {
+      highlightUserId: search.highlightUserId as string | undefined,
+    };
+  },
   beforeLoad: () => {
     if (typeof window !== "undefined") {
       let isStaff = false;
@@ -53,13 +62,19 @@ const roleLabels: Record<Role, string> = {
 };
 
 function UsersPage() {
+  const { highlightUserId } = Route.useSearch();
+  const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
+
   const [users, setUsers] = useState<User[]>([]);
   const [q, setQ] = useState("");
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   
   // Dialog visibility
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   // Form states
   const [name, setName] = useState("");
@@ -81,7 +96,19 @@ function UsersPage() {
 
   useEffect(() => {
     void loadUsers();
+    void api.getCurrentUser().then(res => setCurrentUser(res.user)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (highlightUserId && users.length > 0) {
+      setTimeout(() => {
+        const row = rowRefs.current[highlightUserId];
+        if (row) {
+          row.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 300);
+    }
+  }, [highlightUserId, users]);
 
   const filtered = users.filter(
     (u) =>
@@ -141,6 +168,27 @@ function UsersPage() {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    if (currentUser?.id === userToDelete.id) {
+      toast.error("You cannot delete your own account.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.deleteUser(userToDelete.id);
+      toast.success("User deleted successfully");
+      setIsDeleteOpen(false);
+      setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete user");
+    } finally {
+      setSaving(false);
+      setUserToDelete(null);
+    }
+  };
+
   const openAdd = () => {
     setName("");
     setEmail("");
@@ -177,7 +225,14 @@ function UsersPage() {
           </thead>
           <tbody>
             {list.map((u) => (
-              <tr key={u.id} className="border-b last:border-0 hover:bg-accent/40">
+              <tr 
+                key={u.id} 
+                ref={(el) => (rowRefs.current[u.id] = el)}
+                className={cn(
+                  "border-b last:border-0 hover:bg-accent/40 transition-colors",
+                  highlightUserId === u.id ? "bg-primary/10 ring-2 ring-primary ring-inset" : ""
+                )}
+              >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar name={u.name} size={32} />
@@ -198,8 +253,25 @@ function UsersPage() {
                 <td className="px-4 py-3 text-right">
                   <div className="inline-flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(u)} title="Edit user"><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => void handleToggleActive(u)} title={u.active ? "Disable user" : "Enable user"} className={cn(u.active ? "text-muted-foreground hover:text-destructive" : "text-success hover:text-success/80")}>
+                    <Button variant="ghost" size="icon" onClick={() => void handleToggleActive(u)} title={u.active ? "Disable user" : "Enable user"} className={cn(u.active ? "text-muted-foreground hover:text-warning" : "text-success hover:text-success/80")}>
                       <UserMinus className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      disabled={currentUser?.id === u.id}
+                      onClick={() => {
+                        if (currentUser?.id === u.id) {
+                          toast.error("You cannot delete your own account.");
+                          return;
+                        }
+                        setUserToDelete(u);
+                        setIsDeleteOpen(true);
+                      }} 
+                      title="Delete user" 
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </td>
@@ -318,6 +390,24 @@ function UsersPage() {
               <Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save Changes"}</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-sm text-foreground">
+            Are you sure you want to delete <strong>{userToDelete?.name}</strong>? This action cannot be undone.
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={saving}>Cancel</Button>
+            <Button type="button" variant="destructive" onClick={() => void handleDeleteUser()} disabled={saving}>
+              {saving ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
