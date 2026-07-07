@@ -138,7 +138,7 @@ function SettingsPage() {
         notifyWeekly,
       });
       setCurrentUser(updatedUser);
-      window.localStorage.setItem("mgg_user", JSON.stringify(updatedUser));
+      window.sessionStorage.setItem("mgg_user", JSON.stringify(updatedUser));
       toast.success("Notification preferences saved successfully!");
     } catch (err: any) {
       toast.error(err.message || "Failed to save notification preferences");
@@ -242,10 +242,10 @@ function SettingsPage() {
         <TabsContent value="notifications">
           <div className="rounded-xl border bg-card p-6 shadow-sm">
             {[
-              { id: "assignments", label: "New task assignments", desc: "Email me when a task is assigned to me.", value: notifyAssignments, onChange: setNotifyAssignments },
-              { id: "deadlines", label: "Deadline reminders", desc: "Reminders 24 hours before a task is due.", value: notifyDeadlines, onChange: setNotifyDeadlines },
-              { id: "approvals", label: "Submission approvals", desc: "Tell me when a submission is approved.", value: notifyApprovals, onChange: setNotifyApprovals },
-              { id: "weekly", label: "Weekly digest", desc: "A Monday morning summary of team activity.", value: notifyWeekly, onChange: setNotifyWeekly },
+              { id: "assignments", label: "Real-Time Push Alerts", desc: "Receive immediate on-screen desktop slider banners via Server-Sent Events (SSE) for instant task updates.", value: notifyAssignments, onChange: setNotifyAssignments },
+              { id: "deadlines", label: "System OS Level Notifications", desc: "Enable native hardware-level operating system notification cards for critical high-priority task rules, active even when backgrounded.", value: notifyDeadlines, onChange: setNotifyDeadlines },
+              { id: "approvals", label: "Automated Lifecyle Reminders", desc: "Trigger background worker cron notifications 24 hours prior to deadline targets and on the morning of due dates.", value: notifyApprovals, onChange: setNotifyApprovals },
+              { id: "weekly", label: "External Calendar Stream Synchronization", desc: "Expose a dynamic cryptographic WebCal feed link to map workspace schedules natively into external personal device agendas.", value: notifyWeekly, onChange: setNotifyWeekly },
             ].map((row) => (
               <div key={row.id} className="flex items-center justify-between border-b py-4 last:border-0">
                 <div>
