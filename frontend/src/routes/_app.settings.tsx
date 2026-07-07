@@ -112,9 +112,17 @@ function SettingsPage() {
         avatar,
       });
 
+      const oldUserStr = window.sessionStorage.getItem("mgg_user");
+      let activeToken = "";
+      if (oldUserStr) {
+        try {
+          activeToken = JSON.parse(oldUserStr).token || "";
+        } catch {}
+      }
+
       setCurrentUser(updatedUser);
       // Sync session storage so the sidebar, comments, and navigation fetch the updated user instantly
-      window.sessionStorage.setItem("mgg_user", JSON.stringify(updatedUser));
+      window.sessionStorage.setItem("mgg_user", JSON.stringify({ ...updatedUser, token: activeToken }));
       
       toast.success("Profile details updated successfully!");
       // Reload page layout after brief timeout to refresh navbar/sidebar avatar/initials
@@ -137,8 +145,17 @@ function SettingsPage() {
         notifyApprovals,
         notifyWeekly,
       });
+
+      const oldUserStr = window.sessionStorage.getItem("mgg_user");
+      let activeToken = "";
+      if (oldUserStr) {
+        try {
+          activeToken = JSON.parse(oldUserStr).token || "";
+        } catch {}
+      }
+
       setCurrentUser(updatedUser);
-      window.sessionStorage.setItem("mgg_user", JSON.stringify(updatedUser));
+      window.sessionStorage.setItem("mgg_user", JSON.stringify({ ...updatedUser, token: activeToken }));
       toast.success("Notification preferences saved successfully!");
     } catch (err: any) {
       toast.error(err.message || "Failed to save notification preferences");
