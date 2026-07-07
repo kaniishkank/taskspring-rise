@@ -29,6 +29,9 @@ function AppLayout() {
       navigate({ to: "/login", replace: true });
     } else {
       setIsAuth(true);
+      if ("Notification" in window && Notification.permission === "default") {
+        void Notification.requestPermission();
+      }
     }
   }, [navigate]);
 
@@ -149,6 +152,14 @@ function AppLayout() {
                   duration: 8000,
                 });
                 window.dispatchEvent(new CustomEvent("mgg_notifications_updated"));
+
+                if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+                  const taskTitle = data.task?.title || data.title;
+                  new Notification("High Priority Task Alert", {
+                    body: "Task: '" + taskTitle + "' requires immediate attention.",
+                    icon: "/favicon.ico"
+                  });
+                }
               }
             } catch (err) {
               console.error("[SSE] Failed to parse SSE message", err, event.data);
