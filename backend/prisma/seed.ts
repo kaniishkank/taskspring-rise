@@ -142,7 +142,7 @@ async function main() {
 
       await db.task.create({
         data: {
-          title: `Assigned by ${mShortName} - Q1 Curriculum Audit Review ${taskCounter}`,
+          title: `Q1 Curriculum Audit Review ${taskCounter}`,
           description: `Collaborative academic review of lesson plans and assessments assigned by ${m.name} to ${s.name}. Please complete within the allocated timeline.`,
           status,
           priority,
