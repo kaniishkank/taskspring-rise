@@ -109,8 +109,8 @@ function TasksPage() {
     () =>
       tasks.filter(
         (t) =>
-          (status === "all" || t.status === status) &&
-          (priority === "all" || t.priority === priority) &&
+          (status === "all" || t.status?.toLowerCase() === status?.toLowerCase()) &&
+          (priority === "all" || t.priority?.toLowerCase() === priority?.toLowerCase()) &&
           (q === "" ||
             t.title.toLowerCase().includes(q.toLowerCase()) ||
             t.id.toLowerCase().includes(q.toLowerCase())),
@@ -446,7 +446,13 @@ function TasksPage() {
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-6 snap-x min-h-[500px]">
           {COLUMNS.map((col) => {
-            const colTasks = filtered.filter((t) => t.status === col.value);
+            const colTasks = filtered.filter((t) => {
+              const tStatus = t.status?.toLowerCase();
+              const colVal = col.value?.toLowerCase();
+              if (colVal === "assigned") return tStatus === "assigned" || tStatus === "created";
+              if (colVal === "under_review") return tStatus === "under_review" || tStatus === "rejected";
+              return tStatus === colVal;
+            });
             return (
               <div
                 key={col.value}

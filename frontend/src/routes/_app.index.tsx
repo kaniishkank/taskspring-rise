@@ -92,19 +92,19 @@ function Dashboard() {
   }, []);
 
   const total = tasks.length;
-  const active = tasks.filter((t) => ["assigned", "in_progress"].includes(t.status)).length;
-  const pending = tasks.filter((t) => ["submitted", "under_review"].includes(t.status)).length;
+  const active = tasks.filter((t) => ["assigned", "in_progress"].includes(t.status?.toLowerCase())).length;
+  const pending = tasks.filter((t) => ["submitted", "under_review"].includes(t.status?.toLowerCase())).length;
   const overdue = tasks.filter(
-    (t) => !["completed", "approved"].includes(t.status) && isBefore(new Date(t.dueDate), new Date()),
+    (t) => !["completed", "approved"].includes(t.status?.toLowerCase()) && isBefore(new Date(t.dueDate), new Date()),
   ).length;
-  const completed = tasks.filter((t) => ["completed", "approved"].includes(t.status)).length;
+  const completed = tasks.filter((t) => ["completed", "approved"].includes(t.status?.toLowerCase())).length;
 
   const statusData = [
-    { name: "Assigned", value: tasks.filter((t) => t.status === "assigned").length, color: "var(--muted-foreground)" },
-    { name: "In Progress", value: tasks.filter((t) => t.status === "in_progress").length, color: "var(--info)" },
+    { name: "Assigned", value: tasks.filter((t) => t.status?.toLowerCase() === "assigned").length, color: "var(--muted-foreground)" },
+    { name: "In Progress", value: tasks.filter((t) => t.status?.toLowerCase() === "in_progress").length, color: "var(--info)" },
     { name: "Review", value: pending, color: "var(--warning)" },
     { name: "Completed", value: completed, color: "var(--success)" },
-    { name: "Rejected", value: tasks.filter((t) => t.status === "rejected").length, color: "var(--destructive)" },
+    { name: "Rejected", value: tasks.filter((t) => t.status?.toLowerCase() === "rejected").length, color: "var(--destructive)" },
   ];
 
   const monthly = useMemo(() => {
