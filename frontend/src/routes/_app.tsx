@@ -111,7 +111,15 @@ function AppLayout() {
       try {
         const user = JSON.parse(userStr);
         if (user?.id) {
-          // Automatic calendar sync has been removed to prevent "Pick an app" popups
+          const isSynced = localStorage.getItem(`mgg_cal_synced_${user.id}`);
+          if (!isSynced) {
+            localStorage.setItem(`mgg_cal_synced_${user.id}`, "true");
+            const apiBaseUrl = typeof window !== "undefined"
+              ? `${window.location.protocol}//${window.location.hostname}:4000`
+              : "http://localhost:4000";
+            const webcalUrl = `${apiBaseUrl.replace(/^http(s)?:/, "webcal:")}/api/tasks/ical/${user.id}`;
+            console.log("[Calendar] Automatically triggering calendar sync link:", webcalUrl);
+          }
         }
         if (user?.token) {
           console.log("[SSE] Initializing EventSource connection to backend...");
