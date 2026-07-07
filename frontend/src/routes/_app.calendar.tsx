@@ -96,6 +96,19 @@ function CalendarPage() {
   useEffect(() => {
     void loadData();
     void api.getCurrentUser().then((data) => setCurrentUser(data.user)).catch(() => {});
+
+    const handleUpdate = () => {
+      console.log("[Calendar] Real-time tasks update event detected, refetching...");
+      void loadData();
+    };
+
+    window.addEventListener("mgg_notifications_updated", handleUpdate);
+    window.addEventListener("mgg_tasks_updated", handleUpdate);
+
+    return () => {
+      window.removeEventListener("mgg_notifications_updated", handleUpdate);
+      window.removeEventListener("mgg_tasks_updated", handleUpdate);
+    };
   }, []);
 
   let start: Date;
@@ -184,7 +197,7 @@ function CalendarPage() {
     try {
       await api.updateTaskDueDate(taskId, d.toISOString());
       toast.success("Task rescheduled successfully");
-      void loadData();
+      window.dispatchEvent(new CustomEvent("mgg_tasks_updated"));
     } catch {
       toast.error("Failed to reschedule task");
       void loadData();
@@ -218,7 +231,7 @@ function CalendarPage() {
       });
       toast.success("Task created successfully!");
       setIsAddOpen(false);
-      void loadData();
+      window.dispatchEvent(new CustomEvent("mgg_tasks_updated"));
     } catch {
       toast.error("Failed to create task");
     } finally {

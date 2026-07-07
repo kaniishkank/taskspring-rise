@@ -54,6 +54,14 @@ router.get("/feed/:feedToken", async (req, res) => {
       return `${year}${month}${day}`;
     };
 
+    const baseDomain = req.headers.host?.includes('localhost') 
+      ? 'YOUR_TUNNEL_URL_HERE_IF_USING_NGROK_OR_LOCAL_IP' 
+      : `https://${req.headers.host}`;
+    
+    const frontendDomain = baseDomain.includes('YOUR_TUNNEL_URL')
+      ? baseDomain
+      : baseDomain.replace(':4000', ':8080');
+
     let icsContent = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
@@ -62,10 +70,13 @@ router.get("/feed/:feedToken", async (req, res) => {
       "METHOD:PUBLISH",
       `X-WR-CALNAME:TaskFlow - ${user.name}`,
       `X-WR-TIMEZONE:Asia/Kolkata`,
+      "X-PUBLISHED-TTL:PT1M",
+      "REFRESH-INTERVAL;VALUE=DURATION:PT1M",
+      "Cache-Control: no-cache, no-store, must-revalidate",
     ];
 
     tasks.forEach((task) => {
-      const taskUrl = `http://localhost:8080/tasks/${task.id}`;
+      const taskUrl = `${frontendDomain}/tasks/${task.id}`;
       const dtstamp = formatDate(new Date(task.createdAt));
       const dtstart = formatDateDay(new Date(task.dueDate));
       
@@ -93,6 +104,9 @@ router.get("/feed/:feedToken", async (req, res) => {
     icsContent.push("END:VCALENDAR");
 
     res.setHeader("Content-Type", "text/calendar; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
     res.setHeader("Content-Disposition", 'attachment; filename="calendar.ics"');
     res.send(icsContent.join("\r\n"));
 

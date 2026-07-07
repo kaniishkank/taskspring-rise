@@ -230,6 +230,7 @@ function TasksPage() {
     try {
       await api.updateTaskStatus(taskId, newStatus);
       toast.success(`Task status updated to ${newStatus.replace("_", " ")}`);
+      window.dispatchEvent(new CustomEvent("mgg_tasks_updated"));
     } catch (err) {
       console.error(err);
       toast.error("Failed to update status");
@@ -262,6 +263,7 @@ function TasksPage() {
       toast.success("Task deleted successfully");
       setIsDeleteOpen(false);
       setTasks((prev) => prev.filter((t) => t.id !== taskToDelete.id));
+      window.dispatchEvent(new CustomEvent("mgg_tasks_updated"));
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete task");
@@ -289,7 +291,7 @@ function TasksPage() {
       });
       toast.success("Task updated successfully");
       setIsEditOpen(false);
-      void loadData();
+      window.dispatchEvent(new CustomEvent("mgg_tasks_updated"));
     } catch (err) {
       console.error(err);
       toast.error("Failed to update task");
