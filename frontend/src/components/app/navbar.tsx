@@ -87,6 +87,17 @@ export function Navbar({
       setTasks(taskData);
       setUsers(userDataList);
     }).catch(() => {});
+
+    const handleUpdate = () => {
+      api.getNotifications()
+        .then(setNotifications)
+        .catch(() => {});
+    };
+
+    window.addEventListener("mgg_notifications_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("mgg_notifications_updated", handleUpdate);
+    };
   }, []);
 
   const matchingTasks = useMemo(() => {
@@ -341,6 +352,7 @@ export function Navbar({
                       e.stopPropagation();
                       void api.deleteNotification(n.id).then(() => {
                         setNotifications((prev) => prev.filter((x) => x.id !== n.id));
+                        window.dispatchEvent(new CustomEvent("mgg_notifications_updated"));
                       });
                     }}
                     className="absolute right-2 top-3 rounded p-1 opacity-0 transition-opacity hover:bg-background group-hover:opacity-100"

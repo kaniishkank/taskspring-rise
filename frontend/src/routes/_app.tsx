@@ -148,6 +148,7 @@ function AppLayout() {
                   description: data.message,
                   duration: 8000,
                 });
+                window.dispatchEvent(new CustomEvent("mgg_notifications_updated"));
               }
             } catch (err) {
               console.error("[SSE] Failed to parse SSE message", err, event.data);

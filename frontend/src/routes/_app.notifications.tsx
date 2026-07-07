@@ -49,6 +49,7 @@ function NotificationsPage() {
       await api.markAllNotificationsRead();
       setItems((p) => p.map((n) => ({ ...n, read: true })));
       toast.success("All notifications marked as read");
+      window.dispatchEvent(new CustomEvent("mgg_notifications_updated"));
     } catch {
       toast.error("Failed to mark notifications read");
     }
@@ -58,6 +59,7 @@ function NotificationsPage() {
     try {
       await api.markNotificationRead(id);
       setItems((p) => p.map((n) => (n.id === id ? { ...n, read: true } : n)));
+      window.dispatchEvent(new CustomEvent("mgg_notifications_updated"));
     } catch {}
   };
 
@@ -68,6 +70,7 @@ function NotificationsPage() {
       setItems((p) => p.filter((n) => n.id !== id));
       if (expandedId === id) setExpandedId(null);
       toast.success("Notification deleted");
+      window.dispatchEvent(new CustomEvent("mgg_notifications_updated"));
     } catch {
       toast.error("Failed to delete notification");
     }
