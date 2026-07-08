@@ -212,6 +212,64 @@ router.get("/submissions", async (req, res) => {
   }
 });
 
+router.get("/reports/trend", async (req, res) => {
+  const user = await getAuthUser(req);
+  if (!user || user.role === "STAFF") {
+    return res.status(403).json({ error: "Access denied." });
+  }
+
+  const period = (req.query.period as string) || "30d";
+  let daysLimit = 30;
+  if (period === "7d") daysLimit = 7;
+  else if (period === "90d") daysLimit = 90;
+  else if (period === "ytd") {
+    const startOfYearDate = new Date(new Date().getFullYear(), 0, 1);
+    const diffTime = Math.abs(new Date().getTime() - startOfYearDate.getTime());
+    daysLimit = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  }
+
+  const tasks = await db.task.findMany({
+    where: {
+      assignedById: user.id
+    },
+    include: {
+      submissions: true
+    }
+  });
+
+  const trend = Array.from({ length: daysLimit }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (daysLimit - 1 - i));
+    const dateStr = d.toLocaleDateString("en-US", { day: "numeric", month: "short" });
+
+    // Completed: tasks with status completed or approved
+    const completedTasks = tasks.filter((t) => {
+      const statusLower = t.status.toLowerCase();
+      const isCompleted = ["completed", "approved"].includes(statusLower);
+      const compSub = t.submissions?.find((s: any) => ["approved", "completed"].includes(s.status.toLowerCase()));
+      const compDate = compSub ? new Date(compSub.at) : new Date(t.createdAt);
+      return isCompleted && compDate.toDateString() === d.toDateString();
+    }).length;
+
+    // Overdue: tasks that are not completed, whose dueDate is in the past compared to d
+    const overdueTasks = tasks.filter((t) => {
+      const statusLower = t.status.toLowerCase();
+      const isCompleted = ["completed", "approved"].includes(statusLower);
+      const isSameDueDate = new Date(t.dueDate).toDateString() === d.toDateString();
+      const isOverdue = !isCompleted && new Date(t.dueDate) < new Date();
+      return isOverdue && isSameDueDate;
+    }).length;
+
+    return {
+      name: dateStr,
+      completed: completedTasks,
+      overdue: overdueTasks
+    };
+  });
+
+  res.json(trend);
+});
+
 router.get("/:id", async (req, res) => {
   const task = await db.task.findUnique({
     where: { id: req.params.id },

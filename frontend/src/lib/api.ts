@@ -181,6 +181,10 @@ export const api = {
     });
   },
 
+  async getReportTrend(period: string) {
+    return request<any[]>(`/tasks/reports/trend?period=${period}`);
+  },
+
   async getUsers() {
     return request<User[]>('/users');
   },

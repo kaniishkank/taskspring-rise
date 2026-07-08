@@ -33,13 +33,19 @@ function ReportsPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [period, setPeriod] = useState<string>("30d");
+  const [trendData, setTrendData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     try {
-      const [taskData, userData] = await Promise.all([api.getTasks(), api.getUsers()]);
+      const [taskData, userData, trend] = await Promise.all([
+        api.getTasks(),
+        api.getUsers(),
+        api.getReportTrend(period)
+      ]);
       setTasks(taskData);
       setUsers(userData);
+      setTrendData(trend || []);
     } catch {
       toast.error("Failed to load reports data");
     } finally {
@@ -49,7 +55,7 @@ function ReportsPage() {
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [period]);
 
   // Filter tasks based on selected range
   const filteredTasks = useMemo(() => {
@@ -80,58 +86,6 @@ function ReportsPage() {
     const isCompleted = ["completed", "approved"].includes(t.status);
     return !isCompleted && new Date(t.dueDate) < new Date();
   }).length;
-
-  // Trend Data Calculation
-  const trendData = useMemo(() => {
-    if (period === "7d") {
-      return Array.from({ length: 7 }).map((_, i) => {
-        const d = subDays(new Date(), 6 - i);
-        const dayLabel = format(d, "EEE");
-        const dayTasks = filteredTasks.filter((t) => isSameDay(new Date(t.dueDate), d));
-        const completed = dayTasks.filter((t) => ["completed", "approved"].includes(t.status)).length;
-        const overdue = dayTasks.filter((t) => !["completed", "approved"].includes(t.status) && new Date(t.dueDate) < new Date()).length;
-        return { name: dayLabel, completed, overdue };
-      });
-    }
-
-    if (period === "30d") {
-      return Array.from({ length: 30 }).map((_, i) => {
-        const d = subDays(new Date(), 29 - i);
-        const dayLabel = format(d, "d MMM");
-        const dayTasks = filteredTasks.filter((t) => isSameDay(new Date(t.dueDate), d));
-        const completed = dayTasks.filter((t) => ["completed", "approved"].includes(t.status)).length;
-        const overdue = dayTasks.filter((t) => !["completed", "approved"].includes(t.status) && new Date(t.dueDate) < new Date()).length;
-        return { name: dayLabel, completed, overdue };
-      });
-    }
-
-    if (period === "90d") {
-      return Array.from({ length: 12 }).map((_, i) => {
-        const start = subWeeks(new Date(), 11 - i);
-        const weekTasks = filteredTasks.filter((t) => {
-          const d = new Date(t.dueDate);
-          return d >= start && d <= subDays(start, -7);
-        });
-        const completed = weekTasks.filter((t) => ["completed", "approved"].includes(t.status)).length;
-        const overdue = weekTasks.filter((t) => !["completed", "approved"].includes(t.status) && new Date(t.dueDate) < new Date()).length;
-        return { name: `Wk ${12 - i}`, completed, overdue };
-      });
-    }
-
-    // YTD
-    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const curMonth = new Date().getMonth();
-    return Array.from({ length: curMonth + 1 }).map((_, i) => {
-      const monthTasks = filteredTasks.filter((t) => {
-        const d = new Date(t.dueDate);
-        return d.getMonth() === i && d.getFullYear() === new Date().getFullYear();
-      });
-      const completed = monthTasks.filter((t) => ["completed", "approved"].includes(t.status)).length;
-      const overdue = monthTasks.filter((t) => !["completed", "approved"].includes(t.status) && new Date(t.dueDate) < new Date()).length;
-      return { name: months[i], completed, overdue };
-    });
-  }, [filteredTasks, period]);
-
   // Performance Data Calculation
   const performanceData = useMemo(() => {
     const staff = users.filter((u) => u.role === "STAFF");
