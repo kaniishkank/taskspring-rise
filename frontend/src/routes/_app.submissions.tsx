@@ -42,6 +42,10 @@ function SubmissionsPage() {
   const [modalTaskId, setModalTaskId] = useState("");
   const [modalSubId, setModalSubId] = useState("");
   const [modalFeedback, setModalFeedback] = useState("");
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectTaskId, setRejectTaskId] = useState("");
+  const [rejectSubId, setRejectSubId] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
 
   const loadData = async () => {
     try {
@@ -103,6 +107,32 @@ function SubmissionsPage() {
     }
   };
 
+  const openRejectModal = (taskId: string, subId: string) => {
+    setRejectTaskId(taskId);
+    setRejectSubId(subId);
+    setRejectReason("");
+    setRejectModalOpen(true);
+  };
+
+  const handleRejectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectReason.trim()) {
+      toast.error("Rejection reason is required.");
+      return;
+    }
+    setRejectModalOpen(false);
+    setProcessing((prev) => ({ ...prev, [rejectSubId]: true }));
+    try {
+      await api.updateSubmissionStatus(rejectTaskId, rejectSubId, "rejected", rejectReason, currentUser?.id);
+      toast.success("Submission reviewed as rejected");
+      void loadData();
+    } catch {
+      toast.error("Failed to reject submission");
+    } finally {
+      setProcessing((prev) => ({ ...prev, [rejectSubId]: false }));
+    }
+  };
+
   const rows = (tasks || []).flatMap((t) =>
     (t?.submissions || []).map((s) => ({
       task: t,
@@ -150,7 +180,7 @@ function SubmissionsPage() {
                       size="sm"
                       disabled={isSubProcessing}
                       className="hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => void handleReview(task?.id || "", sub?.id || "", "rejected")}
+                      onClick={() => openRejectModal(task?.id || "", sub?.id || "")}
                     >
                       <XCircle className="mr-1.5 h-4 w-4" />Reject
                     </Button>
@@ -198,6 +228,11 @@ function SubmissionsPage() {
                   ))}
                 </div>
               )}
+              {sub?.feedback && (
+                <div className="mt-3 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 p-3 text-xs text-amber-800 dark:text-amber-300">
+                  <strong>Review Comment / Feedback:</strong> {sub.feedback}
+                </div>
+              )}
               {isPending && (
                 <Textarea
                   placeholder="Leave a comment for the staff member..."
@@ -235,6 +270,39 @@ function SubmissionsPage() {
               </Button>
               <Button type="submit" className="bg-amber-600 text-white hover:bg-amber-700">
                 Send Change Request
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={rejectModalOpen} onOpenChange={setRejectModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Submission & State Reason</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleRejectSubmit} className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="reject-feedback" className="text-sm font-semibold">Rejection Reason *</Label>
+              <Textarea
+                id="reject-feedback"
+                placeholder="Please specify the rejection reasons or missing documentation details..."
+                required
+                rows={4}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+              />
+            </div>
+            <DialogFooter className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setRejectModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={!rejectReason.trim()}
+              >
+                Confirm Rejection
               </Button>
             </DialogFooter>
           </form>

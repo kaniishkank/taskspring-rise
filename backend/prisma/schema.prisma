@@ -71,6 +71,7 @@ model Submission {
   files   String   @default("[]")
   links   String   @default("[]")
   status  String
+  feedback String?
 }
 
 model Notification {

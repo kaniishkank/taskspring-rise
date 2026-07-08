@@ -50,6 +50,7 @@ export interface Task {
     files: string[];
     links: string[];
     status: TaskStatus;
+    feedback?: string | null;
   }[];
 }
 

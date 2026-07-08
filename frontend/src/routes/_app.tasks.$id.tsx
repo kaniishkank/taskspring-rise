@@ -432,6 +432,11 @@ function TaskDetail() {
                               {s.links.map((l) => <li key={l}><a href={l} target="_blank" rel="noopener noreferrer" className="hover:underline">{l}</a></li>)}
                             </ul>
                           )}
+                          {s.feedback && (
+                            <div className="mt-3 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 p-3 text-xs text-amber-800 dark:text-amber-300">
+                              <strong>Admin Feedback:</strong> {s.feedback}
+                            </div>
+                          )}
                         </li>
                       );
                     })}

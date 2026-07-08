@@ -521,7 +521,10 @@ router.patch("/:id/submissions/:submissionId", async (req, res) => {
   
   const sub = await db.submission.update({
     where: { id: req.params.submissionId },
-    data: { status },
+    data: {
+      status,
+      feedback: commentText || null
+    },
   });
 
   let taskStatus = "assigned";
