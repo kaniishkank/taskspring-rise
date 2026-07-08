@@ -72,7 +72,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     }
 
     if (!response.ok) {
-      if (response.status === 401 && typeof window !== "undefined") {
+      if (response.status === 401 && path !== '/auth/login' && typeof window !== "undefined") {
         window.sessionStorage.removeItem("mgg_user");
         window.sessionStorage.removeItem("mgg_deadline_alert_shown");
         window.location.href = "/login";
