@@ -49,6 +49,30 @@ const priorityDot: Record<string, string> = {
   urgent: "bg-destructive",
 };
 
+const getStatusBadge = (status: string) => {
+  const normalized = status?.toUpperCase();
+  switch (normalized) {
+    case 'COMPLETED':
+    case 'DONE':
+      return <span className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Done</span>;
+    case 'APPROVED':
+      return <span className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Approved</span>;
+    case 'CHANGES_REQUESTED':
+    case 'REVISION_PENDING':
+      return <span className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-orange-50 text-orange-700 border border-orange-200">Revision</span>;
+    case 'REJECTED':
+      return <span className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-50 text-rose-700 border border-rose-200">Rejected</span>;
+    case 'IN_PROGRESS':
+      return <span className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200">In Progress</span>;
+    case 'SUBMITTED':
+      return <span className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">Submitted</span>;
+    case 'UNDER_REVIEW':
+      return <span className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-purple-50 text-purple-700 border border-purple-200">Under Review</span>;
+    default:
+      return <span className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 border border-slate-200">Pending</span>;
+  }
+};
+
 function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -416,7 +440,7 @@ function TasksPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{format(new Date(t.dueDate), "MMM d, yyyy")}</td>
-                      <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
+                      <td className="px-4 py-3">{getStatusBadge(t.status)}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex gap-1">
                           {currentUser?.role !== "STAFF" && (
