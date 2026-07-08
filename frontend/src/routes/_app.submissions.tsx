@@ -145,17 +145,22 @@ function SubmissionsPage() {
               <p className="mt-4 text-sm">{sub?.notes || ""}</p>
               {(((sub?.files || [])).length > 0 || ((sub?.links || [])).length > 0) && (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {(sub?.files || []).map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      onClick={() => openMockFile(f)}
-                      className="inline-flex items-center gap-1 rounded-md border bg-primary/10 border-primary/20 hover:bg-primary/25 px-2 py-1 text-xs text-primary transition cursor-pointer"
-                    >
-                      <Paperclip className="h-3 w-3 shrink-0" />
-                      <span>{f}</span>
-                    </button>
-                  ))}
+                  {(sub?.files || []).map((f: any, i: number) => {
+                    const isObject = typeof f === 'object' && f !== null;
+                    const name = isObject ? f.name : f;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => openMockFile(name)}
+                        className="inline-flex items-center gap-1 rounded-md border bg-primary/10 border-primary/20 hover:bg-primary/25 px-2 py-1 text-xs text-primary transition cursor-pointer"
+                      >
+                        <Paperclip className="h-3 w-3 shrink-0" />
+                        <span>{name}</span>
+                        {isObject && <span className="text-[10px] text-muted-foreground ml-1">{f.size}</span>}
+                      </button>
+                    );
+                  })}
                   {(sub?.links || []).map((l) => (
                     <a key={l} href={l} target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs text-primary hover:bg-primary/20">{l}</a>
                   ))}
