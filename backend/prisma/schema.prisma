@@ -48,6 +48,10 @@ model Task {
   comments      Comment[]
   submissions   Submission[]
   notifications Notification[]
+
+  @@index([status])
+  @@index([assignedToId])
+  @@index([assignedById])
 }
 
 model Comment {

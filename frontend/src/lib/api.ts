@@ -8,7 +8,7 @@ interface CacheEntry {
 }
 
 const getCache = new Map<string, CacheEntry>();
-const CACHE_TTL = 3000; // 3 seconds TTL for requests caching
+const CACHE_TTL = 300000; // 5 minutes TTL for requests caching
 
 /**
  * Clears the active request cache. Called automatically on mutations (POST/PUT/PATCH/DELETE).
