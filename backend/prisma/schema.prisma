@@ -24,6 +24,8 @@ model User {
   notifications Notification[]
   fcmToken      String?
   calendarToken String         @unique @default(cuid())
+  phoneNumber   String?
+  notifyWhatsApp Boolean       @default(true)
   notifyAssignments Boolean @default(true)
   notifyDeadlines   Boolean @default(true)
   notifyApprovals   Boolean @default(true)

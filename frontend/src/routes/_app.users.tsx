@@ -80,6 +80,7 @@ function UsersPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [role, setRole] = useState<Role>("STAFF");
   const [department, setDepartment] = useState("");
   const [active, setActive] = useState(true);
@@ -124,11 +125,12 @@ function UsersPage() {
     }
     setSaving(true);
     try {
-      await api.createUser({ name, email, role, department, active, password });
+      await api.createUser({ name, email, role, department, active, password, phoneNumber });
       toast.success("User added successfully");
       setIsAddOpen(false);
       setName("");
       setEmail("");
+      setPhoneNumber("");
       setRole("STAFF");
       setDepartment("");
       setActive(true);
@@ -146,7 +148,7 @@ function UsersPage() {
     if (!editingUser) return;
     setSaving(true);
     try {
-      await api.updateUser(editingUser.id, { name, email, role, department, active });
+      await api.updateUser(editingUser.id, { name, email, role, department, active, phoneNumber });
       toast.success("User updated successfully");
       setIsEditOpen(false);
       void loadUsers();
@@ -192,6 +194,7 @@ function UsersPage() {
   const openAdd = () => {
     setName("");
     setEmail("");
+    setPhoneNumber("");
     setPassword("");
     setRole("STAFF");
     setDepartment("");
@@ -203,6 +206,7 @@ function UsersPage() {
     setEditingUser(u);
     setName(u.name);
     setEmail(u.email);
+    setPhoneNumber(u.phoneNumber || "");
     setRole(u.role);
     setDepartment(u.department ?? "");
     setActive(u.active);
@@ -321,6 +325,10 @@ function UsersPage() {
               <Input id="add-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="e.g. john@acme.co" />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="add-phone">WhatsApp Number</Label>
+              <Input id="add-phone" type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="e.g. 14155552671" />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="add-password">Temporary Password *</Label>
               <Input id="add-password" type="text" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="e.g. Welcome123" />
             </div>
@@ -365,6 +373,10 @@ function UsersPage() {
             <div className="space-y-2">
               <Label htmlFor="edit-email">Email *</Label>
               <Input id="edit-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-phone">WhatsApp Number</Label>
+              <Input id="edit-phone" type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Role *</Label>

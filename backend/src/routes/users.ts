@@ -60,12 +60,13 @@ router.put("/:id", async (req: AuthRequest, res) => {
     return res.status(403).json({ error: "Forbidden: You can only edit your own profile" });
   }
 
-  const { name, email, department, active, avatar, password, notifyAssignments, notifyDeadlines, notifyApprovals, notifyWeekly, role } = req.body;
+  const { name, email, department, active, avatar, password, notifyWhatsApp, notifyAssignments, notifyDeadlines, notifyApprovals, notifyWeekly, role, phoneNumber } = req.body;
   
   const data: any = {};
   if (name !== undefined) data.name = name;
   if (email !== undefined) data.email = email;
   if (department !== undefined) data.department = department;
+  if (phoneNumber !== undefined) data.phoneNumber = phoneNumber;
   // Only managers can change active status or role
   if (active !== undefined && (req.user?.role === "MANAGER" || req.user?.role === "OPERATION")) data.active = active;
   if (role !== undefined && (req.user?.role === "MANAGER" || req.user?.role === "OPERATION")) data.role = role;
@@ -74,6 +75,7 @@ router.put("/:id", async (req: AuthRequest, res) => {
   if (password) {
     data.password = await bcrypt.hash(password, 10);
   }
+  if (notifyWhatsApp !== undefined) data.notifyWhatsApp = notifyWhatsApp;
   if (notifyAssignments !== undefined) data.notifyAssignments = notifyAssignments;
   if (notifyDeadlines !== undefined) data.notifyDeadlines = notifyDeadlines;
   if (notifyApprovals !== undefined) data.notifyApprovals = notifyApprovals;

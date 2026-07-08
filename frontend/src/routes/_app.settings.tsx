@@ -24,11 +24,13 @@ function SettingsPage() {
   // Profile form state
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [department, setDepartment] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Notification form state
+  const [notifyWhatsApp, setNotifyWhatsApp] = useState(true);
   const [notifyAssignments, setNotifyAssignments] = useState(true);
   const [notifyDeadlines, setNotifyDeadlines] = useState(true);
   const [notifyApprovals, setNotifyApprovals] = useState(true);
@@ -52,7 +54,9 @@ function SettingsPage() {
           setName(data.user.name);
           setEmail(data.user.email);
           setDepartment(data.user.department || "");
+          setPhoneNumber(data.user.phoneNumber || "");
           setAvatar(data.user.avatar || null);
+          setNotifyWhatsApp(data.user.notifyWhatsApp ?? true);
           setNotifyAssignments(data.user.notifyAssignments ?? true);
           setNotifyDeadlines(data.user.notifyDeadlines ?? true);
           setNotifyApprovals(data.user.notifyApprovals ?? true);
@@ -108,6 +112,7 @@ function SettingsPage() {
       const updatedUser = await api.updateUser(currentUser.id, {
         name,
         email,
+        phoneNumber,
         department,
         avatar,
       });
@@ -140,6 +145,7 @@ function SettingsPage() {
     if (!currentUser) return;
     try {
       const updatedUser = await api.updateUser(currentUser.id, {
+        notifyWhatsApp,
         notifyAssignments,
         notifyDeadlines,
         notifyApprovals,
@@ -238,6 +244,10 @@ function SettingsPage() {
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1.5" />
               </div>
               <div>
+                <Label htmlFor="phone">WhatsApp Number (e.g. 14155552671)</Label>
+                <Input id="phone" type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="mt-1.5" placeholder="Include country code" />
+              </div>
+              <div>
                 <Label htmlFor="dept">Department</Label>
                 <Input id="dept" value={department} onChange={(e) => setDepartment(e.target.value)} className="mt-1.5" />
               </div>
@@ -259,6 +269,7 @@ function SettingsPage() {
         <TabsContent value="notifications">
           <div className="rounded-xl border bg-card p-6 shadow-sm">
             {[
+              { id: "whatsapp", label: "WhatsApp Direct Reminders", desc: "Get morning daily digests and instant alerts for high-priority tasks delivered straight to your WhatsApp inbox.", value: notifyWhatsApp, onChange: setNotifyWhatsApp },
               { id: "assignments", label: "Real-Time Push Alerts", desc: "Receive immediate on-screen desktop slider banners via Server-Sent Events (SSE) for instant task updates.", value: notifyAssignments, onChange: setNotifyAssignments },
               { id: "deadlines", label: "System OS Level Notifications", desc: "Enable native hardware-level operating system notification cards for critical high-priority task rules, active even when backgrounded.", value: notifyDeadlines, onChange: setNotifyDeadlines },
               { id: "approvals", label: "Automated Lifecyle Reminders", desc: "Trigger background worker cron notifications 24 hours prior to deadline targets and on the morning of due dates.", value: notifyApprovals, onChange: setNotifyApprovals },

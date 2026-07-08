@@ -6,8 +6,12 @@ import tasksRouter from "./routes/tasks.js";
 import usersRouter from "./routes/users.js";
 import notificationsRouter from "./routes/notifications.js";
 import calendarRouter from "./routes/calendar.js";
+import { initializeCronJobs } from "./jobs/cron.js";
 
 dotenv.config();
+
+// Initialize background jobs
+initializeCronJobs();
 
 const app = express();
 

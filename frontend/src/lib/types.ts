@@ -24,6 +24,8 @@ export interface User {
   notifyDeadlines?: boolean;
   notifyApprovals?: boolean;
   notifyWeekly?: boolean;
+  phoneNumber?: string | null;
+  notifyWhatsApp?: boolean;
   calendarToken?: string;
 }
 
