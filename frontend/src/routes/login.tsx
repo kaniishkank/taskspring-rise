@@ -26,6 +26,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +36,7 @@ function LoginPage() {
       return;
     }
     setLoading(true);
+    setError("");
     try {
       console.log("[Login] Calling api.login...");
       const response = await api.login(loginId, password);
@@ -50,7 +52,9 @@ function LoginPage() {
       }
     } catch (err: any) {
       console.error("[Login Exception]", err);
-      toast.error(err.message || "Invalid credentials. Access Denied.");
+      const errMsg = err.message || "Invalid credentials. Access Denied.";
+      setError(errMsg.includes("check your email") ? errMsg : `${errMsg} Please check your email and password and try again.`);
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
@@ -92,6 +96,11 @@ function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium rounded-md flex items-center gap-2 animate-shake">
+                  ❌ {error}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="loginId">Login ID</Label>
                 <Input
