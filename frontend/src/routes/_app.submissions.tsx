@@ -11,6 +11,8 @@ import { api } from "@/lib/api";
 import type { Task, User } from "@/lib/types";
 import { toast } from "sonner";
 import { openMockFile } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/_app/submissions")({
   beforeLoad: () => {
@@ -36,6 +38,10 @@ function SubmissionsPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [comments, setComments] = useState<Record<string, string>>({});
   const [processing, setProcessing] = useState<Record<string, boolean>>({});
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTaskId, setModalTaskId] = useState("");
+  const [modalSubId, setModalSubId] = useState("");
+  const [modalFeedback, setModalFeedback] = useState("");
 
   const loadData = async () => {
     try {
@@ -68,6 +74,32 @@ function SubmissionsPage() {
       toast.error("Failed to review submission");
     } finally {
       setProcessing((prev) => ({ ...prev, [subId]: false }));
+    }
+  };
+
+  const openMakeChanges = (taskId: string, subId: string) => {
+    setModalTaskId(taskId);
+    setModalSubId(subId);
+    setModalFeedback("");
+    setModalOpen(true);
+  };
+
+  const handleModalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modalFeedback.trim()) {
+      toast.error("Feedback is required.");
+      return;
+    }
+    setModalOpen(false);
+    setProcessing((prev) => ({ ...prev, [modalSubId]: true }));
+    try {
+      await api.updateSubmissionStatus(modalTaskId, modalSubId, "changes_requested", modalFeedback, currentUser?.id);
+      toast.success("Submission reviewed as changes requested");
+      void loadData();
+    } catch {
+      toast.error("Failed to request changes");
+    } finally {
+      setProcessing((prev) => ({ ...prev, [modalSubId]: false }));
     }
   };
 
@@ -126,10 +158,10 @@ function SubmissionsPage() {
                       variant="outline"
                       size="sm"
                       disabled={isSubProcessing}
-                      className="hover:bg-warning/10 hover:text-warning-foreground"
-                      onClick={() => void handleReview(task?.id || "", sub?.id || "", "changes_requested")}
+                      className="border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-600 dark:text-amber-400 hover:text-amber-700"
+                      onClick={() => openMakeChanges(task?.id || "", sub?.id || "")}
                     >
-                      <MessageSquare className="mr-1.5 h-4 w-4" />Request changes
+                      <MessageSquare className="mr-1.5 h-4 w-4" />Make Changes
                     </Button>
                     <Button
                       size="sm"
@@ -179,6 +211,35 @@ function SubmissionsPage() {
           );
         })}
       </div>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request Revision / Specification Changes</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleModalSubmit} className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="modal-feedback" className="text-sm font-semibold">Change Requirements *</Label>
+              <Textarea
+                id="modal-feedback"
+                placeholder="Specify what needs to be changed or corrected..."
+                required
+                rows={4}
+                value={modalFeedback}
+                onChange={(e) => setModalFeedback(e.target.value)}
+              />
+            </div>
+            <DialogFooter className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-amber-600 text-white hover:bg-amber-700">
+                Send Change Request
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

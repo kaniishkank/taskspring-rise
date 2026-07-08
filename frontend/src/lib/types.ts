@@ -6,7 +6,9 @@ export type TaskStatus =
   | "under_review"
   | "approved"
   | "rejected"
-  | "completed";
+  | "completed"
+  | "changes_requested"
+  | "revision_pending";
 export type Role = "OPERATION" | "MANAGER" | "STAFF";
 
 export interface User {

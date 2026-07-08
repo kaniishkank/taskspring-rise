@@ -9,6 +9,8 @@ const statusStyles: Record<TaskStatus, string> = {
   approved: "bg-success/15 text-success border-success/30",
   rejected: "bg-destructive/15 text-destructive border-destructive/30",
   completed: "bg-success/20 text-success border-success/40",
+  changes_requested: "bg-warning/15 text-warning border-warning/30 dark:text-warning",
+  revision_pending: "bg-warning/25 text-warning border-warning/45 dark:text-warning",
 };
 
 const statusLabel: Record<TaskStatus, string> = {
@@ -19,6 +21,8 @@ const statusLabel: Record<TaskStatus, string> = {
   approved: "Approved",
   rejected: "Rejected",
   completed: "Completed",
+  changes_requested: "Changes Requested",
+  revision_pending: "Revision Pending",
 };
 
 export function StatusBadge({ status, className }: { status: TaskStatus; className?: string }) {
