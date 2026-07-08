@@ -72,7 +72,11 @@ function SubmissionsPage() {
   };
 
   const rows = tasks.flatMap((t) =>
-    t.submissions.map((s) => ({ task: t, sub: s, user: users.find((u) => u.id === t.assignedTo) })),
+    (t.submissions || []).map((s) => ({
+      task: t,
+      sub: s,
+      user: users.find((u) => u.id === s.userId) || users.find((u) => u.id === t.assignedTo)
+    })),
   );
 
   return (
@@ -92,14 +96,14 @@ function SubmissionsPage() {
               <div key={sub.id} className="rounded-xl border bg-card p-6 shadow-sm">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="flex min-w-0 items-start gap-3">
-                    <UserAvatar name={user?.name} avatar={user?.avatar} size={40} />
+                    <UserAvatar name={user?.name || "Former Staff Member"} avatar={user?.avatar} size={40} />
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Link to="/tasks/$id" params={{ id: task.id }} className="truncate text-base font-semibold hover:underline">{task.title}</Link>
-                        <StatusBadge status={sub.status} />
+                        <Link to="/tasks/$id" params={{ id: task?.id }} className="truncate text-base font-semibold hover:underline">{task?.title || "Untitled Task"}</Link>
+                        <StatusBadge status={sub?.status} />
                       </div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        {user?.name} · submitted {format(new Date(sub.at), "MMM d, yyyy · HH:mm")}
+                        {user?.name || "Former Staff Member"} · submitted {sub?.at ? format(new Date(sub.at), "MMM d, yyyy · HH:mm") : ""}
                       </div>
                     </div>
                   </div>

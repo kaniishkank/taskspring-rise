@@ -450,8 +450,8 @@ function TaskDetail() {
                   </li>
                   <li>
                     <span className="absolute -left-1.5 h-3 w-3 rounded-full bg-info" />
-                    <div className="text-sm font-medium">Assigned to {assignee?.name}</div>
-                    <div className="text-xs text-muted-foreground">by {assigner?.name}</div>
+                    <div className="text-sm font-medium">Assigned to {assignee?.name || "Former Staff Member"}</div>
+                    <div className="text-xs text-muted-foreground">by {assigner?.name || "Unassigned / Former Admin"}</div>
                   </li>
                   {task.submissions.map((s) => (
                     <li key={s.id}>
@@ -476,7 +476,7 @@ function TaskDetail() {
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground flex items-center gap-2"><UserIcon className="h-4 w-4" />Assigned by</dt>
-                <dd>{assigner?.name}</dd>
+                <dd>{assigner?.name || "Unassigned / Former Admin"}</dd>
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4" />Due date</dt>

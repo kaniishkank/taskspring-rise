@@ -190,16 +190,16 @@ function NotificationsPage() {
                                   <div className="space-y-1">
                                     <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Assigned By</span>
                                     <div className="flex items-center gap-2 mt-1">
-                                      <UserAvatar user={n.task.assignedBy as User} className="h-5 w-5" />
-                                      <span>{n.task.assignedBy?.name || "Unknown"}</span>
+                                      <UserAvatar name={n.task.assignedBy?.name || "Unassigned / Former Admin"} avatar={n.task.assignedBy?.avatar} size={20} className="h-5 w-5" />
+                                      <span>{n.task.assignedBy?.name || "Unassigned / Former Admin"}</span>
                                     </div>
                                   </div>
                                   
                                   <div className="space-y-1">
                                     <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Assigned To</span>
                                     <div className="flex items-center gap-2 mt-1">
-                                      <UserAvatar user={n.task.assignedTo as User} className="h-5 w-5" />
-                                      <span>{n.task.assignedTo?.name || "Unknown"}</span>
+                                      <UserAvatar name={n.task.assignedTo?.name || "Former Staff Member"} avatar={n.task.assignedTo?.avatar} size={20} className="h-5 w-5" />
+                                      <span>{n.task.assignedTo?.name || "Former Staff Member"}</span>
                                     </div>
                                   </div>
                                 </div>

@@ -151,8 +151,8 @@ function TasksPage() {
     };
 
     const rows = filtered.map((t) => {
-      const assignee = users.find((u) => u.id === t.assignedTo)?.name || t.assignedTo;
-      const creator = users.find((u) => u.id === t.assignedBy)?.name || t.assignedBy;
+      const assignee = users.find((u) => u.id === t.assignedTo)?.name || t.assignedTo || "Former Staff Member";
+      const creator = users.find((u) => u.id === t.assignedBy)?.name || t.assignedBy || "Unassigned / Former Admin";
       
       // Format attachments list: "brief.pdf; wires.fig"
       const attachmentsList = (t.attachments || [])
@@ -162,7 +162,7 @@ function TasksPage() {
       // Format comments list: "[Priya Shah]: On it -- sharing v1; [Dr. R. Kapoor]: Please align copy"
       const commentsList = (t.comments || [])
         .map((c) => {
-          const commentUser = users.find((u) => u.id === c.userId)?.name || c.userId;
+          const commentUser = users.find((u) => u.id === c.userId)?.name || c.userId || "Former User";
           return `[${commentUser}]: ${c.text}`;
         })
         .join("; ");
@@ -405,9 +405,9 @@ function TasksPage() {
                           <span className="text-muted-foreground italic text-xs">Not Assigned</span>
                         ) : (
                           <div className="flex items-center gap-2">
-                             <UserAvatar name={u?.name} avatar={u?.avatar} size={26} />
+                             <UserAvatar name={u?.name || (isManager ? "Former Staff Member" : "Unassigned / Former Admin")} avatar={u?.avatar} size={26} />
                              <div className="flex flex-col min-w-0">
-                               <span className="truncate leading-tight">{u?.name || "Unknown"}</span>
+                               <span className="truncate leading-tight">{u?.name || (isManager ? "Former Staff Member" : "Unassigned / Former Admin")}</span>
                                {isManager && u?.email && (
                                  <span className="text-[10px] text-muted-foreground truncate leading-tight">{u.email}</span>
                                )}
@@ -522,9 +522,9 @@ function TasksPage() {
                               <span className="text-[11px] italic text-muted-foreground">Not Assigned</span>
                             ) : (
                               <>
-                                <UserAvatar name={u?.name} avatar={u?.avatar} size={20} />
+                                <UserAvatar name={u?.name || (isManager ? "Former Staff Member" : "Unassigned / Former Admin")} avatar={u?.avatar} size={20} />
                                 <div className="flex flex-col min-w-0">
-                                  <span className="max-w-[100px] truncate text-[11px] leading-tight text-muted-foreground">{u?.name || "Unknown"}</span>
+                                  <span className="max-w-[100px] truncate text-[11px] leading-tight text-muted-foreground">{u?.name || (isManager ? "Former Staff Member" : "Unassigned / Former Admin")}</span>
                                   {isManager && u?.email && (
                                     <span className="max-w-[100px] truncate text-[9px] leading-tight text-muted-foreground/70">{u.email}</span>
                                   )}
