@@ -4,16 +4,20 @@ import { db } from "../db.js";
 const router = Router();
 
 /**
- * @route GET /feed/:feedToken
+ * @route GET /feed/:userId
  * @desc Generates an iCalendar (.ics) feed for a user's tasks to sync with OS Calendars.
  */
-router.get("/feed/:feedToken", async (req, res) => {
-  const { feedToken } = req.params;
+router.get("/feed/:userId", async (req, res) => {
+  const { userId } = req.params;
 
   try {
-    const user = await db.user.findUnique({
+    const user = await db.user.findFirst({
       where: {
-        calendarToken: feedToken,
+        OR: [
+          { id: userId },
+          { email: userId },
+          { calendarToken: userId }
+        ]
       },
     });
 
@@ -23,12 +27,14 @@ router.get("/feed/:feedToken", async (req, res) => {
 
     // Retrieve active tasks
     // If they are a STAFF member, generate the feed containing ONLY tasks assigned to them (assignedToId).
-    // If they are a MANAGER or OPERATION user, generate the feed with all tasks they oversee/manage (all tasks).
+    // If they are a MANAGER, generate the feed containing ONLY tasks created/assigned by them (assignedById).
     const where: any = {
       status: { notIn: ["completed", "approved"] },
     };
     if (user.role === "STAFF") {
       where.assignedToId = user.id;
+    } else if (user.role === "MANAGER") {
+      where.assignedById = user.id;
     }
 
     const tasks = await db.task.findMany({

@@ -57,8 +57,8 @@ function CalendarPage() {
     : "localhost:4000";
   const protocol = typeof window !== "undefined" ? window.location.protocol : "http:";
 
-  const webcalUrl = currentUser?.calendarToken ? `webcal://${baseHost}/api/calendar/feed/${currentUser.calendarToken}` : "";
-  const httpUrl = currentUser?.calendarToken ? `${protocol}//${baseHost}/api/calendar/feed/${currentUser.calendarToken}` : "";
+  const webcalUrl = currentUser?.id ? `webcal://${baseHost}/api/calendar/feed/${currentUser.id}` : "";
+  const httpUrl = currentUser?.id ? `${protocol}//${baseHost}/api/calendar/feed/${currentUser.id}` : "";
 
   const getGoogleUrl = () => {
     if (!httpUrl) return "";
