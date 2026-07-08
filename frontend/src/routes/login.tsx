@@ -39,7 +39,7 @@ function LoginPage() {
       console.log("[Login] Calling api.login...");
       const response = await api.login(loginId, password);
       console.log("[Login] Success! User:", response.user);
-      window.sessionStorage.setItem("mgg_user", JSON.stringify({ id: response.user.id, role: response.user.role, name: response.user.name, token: response.token }));
+      window.sessionStorage.setItem("mgg_user", JSON.stringify({ ...response.user, token: response.token }));
       toast.success(`Welcome back, ${response.user.name}!`);
       if (response.user.role === "MANAGER" || response.user.role === "OPERATION") {
         console.log("[Login] Redirecting to /");
