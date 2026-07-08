@@ -347,16 +347,35 @@ router.post("/:id/submissions", async (req, res) => {
     return res.status(403).json({ error: "Access denied. You can only submit proof for tasks assigned to you." });
   }
 
-  const submission = await db.submission.create({
-    data: {
-      taskId: req.params.id,
-      userId,
-      notes,
-      files: JSON.stringify(files ?? []),
-      links: JSON.stringify(links ?? []),
-      status,
-    },
+  const existingSubmission = await db.submission.findFirst({
+    where: { taskId: req.params.id }
   });
+
+  let submission;
+  if (existingSubmission) {
+    submission = await db.submission.update({
+      where: { id: existingSubmission.id },
+      data: {
+        userId,
+        notes,
+        files: JSON.stringify(files ?? []),
+        links: JSON.stringify(links ?? []),
+        status,
+        at: new Date()
+      }
+    });
+  } else {
+    submission = await db.submission.create({
+      data: {
+        taskId: req.params.id,
+        userId,
+        notes,
+        files: JSON.stringify(files ?? []),
+        links: JSON.stringify(links ?? []),
+        status,
+      },
+    });
+  }
 
   const updatedTask = await db.task.update({
     where: { id: req.params.id },

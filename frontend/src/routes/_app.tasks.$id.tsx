@@ -319,7 +319,7 @@ function TaskDetail() {
                     </div>
                     <div className="flex justify-end">
                       <Button type="submit" disabled={submittingWork}>
-                        {submittingWork ? "Submitting..." : "Submit Task"}
+                        {submittingWork ? "Submitting..." : (task.status === "submitted" ? "Update Submission" : "Submit Task")}
                       </Button>
                     </div>
                   </form>
