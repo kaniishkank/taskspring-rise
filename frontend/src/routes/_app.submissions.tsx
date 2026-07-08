@@ -299,7 +299,7 @@ function SubmissionsPage() {
               </Button>
               <Button
                 type="submit"
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-red-600 hover:bg-red-700 text-white focus:ring-red-500"
                 disabled={!rejectReason.trim()}
               >
                 Confirm Rejection
