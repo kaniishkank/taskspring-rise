@@ -182,6 +182,35 @@ router.get("/", async (req, res) => {
   res.json(tasks.map(parseTask));
 });
 
+router.get("/submissions", async (req, res) => {
+  try {
+    const submissions = await db.submission.findMany({
+      include: {
+        task: {
+          include: {
+            assignedBy: true,
+            assignedTo: true
+          }
+        },
+        user: true
+      }
+    });
+
+    const sanitizedSubmissions = (submissions || []).map(sub => ({
+      ...sub,
+      user: sub.user || { name: "Former User", email: "" },
+      task: sub.task || { title: "Deleted Task", priority: "LOW", status: "UNKNOWN" },
+      files: JSON.parse(sub.files ?? "[]"),
+      links: JSON.parse(sub.links ?? "[]"),
+    }));
+
+    return res.status(200).json(sanitizedSubmissions);
+  } catch (error) {
+    console.error("Submissions fetch crash handled:", error);
+    return res.status(200).json([]);
+  }
+});
+
 router.get("/:id", async (req, res) => {
   const task = await db.task.findUnique({
     where: { id: req.params.id },
