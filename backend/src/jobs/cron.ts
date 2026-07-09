@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { db } from '../db.js';
-import { sendWhatsAppMessage } from '../services/whatsapp.js';
+import { sendWhatsAppAutomationMessage } from '../services/whatsapp-automation.js';
 import { format } from 'date-fns';
 
 export function initializeCronJobs() {
@@ -71,8 +71,8 @@ async function sendDailyDigests() {
 
       digestText += `\n\nPlease log in to the TaskFlow dashboard to view your complete list and submit your work. Have a great day!`;
 
-      // Send the digest via WhatsApp
-      await sendWhatsAppMessage(user.phoneNumber, digestText);
+      // Send the digest via WhatsApp automation
+      await sendWhatsAppAutomationMessage(user.phoneNumber, digestText);
     }
   } catch (error) {
     console.error('[Cron] Error running daily digest:', error);
