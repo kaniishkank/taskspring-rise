@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/app/page-header";
 import { StatusBadge } from "@/components/app/status-badge";
 import { UserAvatar } from "@/components/app/user-avatar";
-import { api } from "@/lib/api";
+import { api, clearApiCache } from "@/lib/api";
 import type { Task, User } from "@/lib/types";
 import { toast } from "sonner";
 import { openMockFile } from "@/lib/utils";
@@ -67,6 +67,7 @@ function SubmissionsPage() {
   const handleReview = async (taskId: string, subId: string, status: "approved" | "rejected" | "changes_requested") => {
     setProcessing((prev) => ({ ...prev, [subId]: true }));
     try {
+      clearApiCache();
       await api.updateSubmissionStatus(taskId, subId, status, comments[subId], currentUser?.id);
       toast.success(`Submission reviewed as ${status.replace("_", " ")}`);
       // Clear comments for this sub
@@ -100,6 +101,7 @@ function SubmissionsPage() {
     setModalOpen(false);
     setProcessing((prev) => ({ ...prev, [modalSubId]: true }));
     try {
+      clearApiCache();
       await api.updateSubmissionStatus(modalTaskId, modalSubId, "changes_requested", modalFeedback, currentUser?.id, modalExtensionDate || undefined);
       toast.success("Submission reviewed as changes requested");
       void loadData();
@@ -126,6 +128,7 @@ function SubmissionsPage() {
     setRejectModalOpen(false);
     setProcessing((prev) => ({ ...prev, [rejectSubId]: true }));
     try {
+      clearApiCache();
       await api.updateSubmissionStatus(rejectTaskId, rejectSubId, "rejected", rejectReason, currentUser?.id);
       toast.success("Submission reviewed as rejected");
       void loadData();

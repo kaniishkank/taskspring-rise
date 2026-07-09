@@ -570,7 +570,8 @@ router.patch("/:id/status", async (req, res) => {
 });
 
 router.patch("/:id/submissions/:submissionId", async (req, res) => {
-  const { status, commentText, managerId, extendedDueDate } = req.body;
+  const { status, commentText, feedback, managerId, extendedDueDate } = req.body;
+  const feedbackReason = feedback || commentText;
 
   const user = await getAuthUser(req);
   if (!user || user.role === "STAFF") {
@@ -581,7 +582,7 @@ router.patch("/:id/submissions/:submissionId", async (req, res) => {
     where: { id: req.params.submissionId },
     data: {
       status,
-      feedback: commentText || null
+      feedback: feedbackReason || null
     },
   });
 
@@ -612,7 +613,7 @@ router.patch("/:id/submissions/:submissionId", async (req, res) => {
       where: { tasksToDo: { some: { id: req.params.id } } }
     });
     if (assignedUser?.phoneNumber && assignedUser.notifyWhatsApp) {
-      const msg = `⏳ *Changes Requested & Deadline Extended*\n\n*Title:* Revision required\n*New Deadline:* ${formattedDate}\n*Reason/Feedback:* ${commentText || "None"}\n\nPlease login to TaskFlow to revise your submission.`;
+      const msg = `⏳ *Changes Requested & Deadline Extended*\n\n*Title:* Revision required\n*New Deadline:* ${formattedDate}\n*Reason/Feedback:* ${feedbackReason || "None"}\n\nPlease login to TaskFlow to revise your submission.`;
       sendWhatsAppMessage(assignedUser.phoneNumber, msg).catch(console.error);
     }
   }
@@ -627,12 +628,12 @@ router.patch("/:id/submissions/:submissionId", async (req, res) => {
     data: taskUpdateData,
   });
 
-  if (commentText && managerId) {
+  if (feedbackReason && managerId) {
     await db.comment.create({
       data: {
         taskId: req.params.id,
         userId: managerId,
-        text: commentText,
+        text: feedbackReason,
       },
     });
   }
