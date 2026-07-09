@@ -7,11 +7,13 @@ import usersRouter from "./routes/users.js";
 import notificationsRouter from "./routes/notifications.js";
 import calendarRouter from "./routes/calendar.js";
 import { initializeCronJobs } from "./jobs/cron.js";
+import { initWhatsAppAutomation } from "./services/whatsapp-automation.js";
 
 dotenv.config();
 
 // Initialize background jobs
 initializeCronJobs();
+initWhatsAppAutomation();
 
 const app = express();
 

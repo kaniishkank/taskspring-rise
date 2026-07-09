@@ -3,7 +3,8 @@ import crypto from "crypto";
 import { db } from "../db.js";
 import { authenticate, AuthRequest } from "../middleware/auth.js";
 import { sendNotificationToUser } from "./notifications.js";
-import { sendWhatsAppMessage } from "../services/whatsapp.js";
+import { sendTaskAssignedTemplate, sendWhatsAppMessage } from "../services/whatsapp.js";
+import { sendWhatsAppAutomationMessage } from "../services/whatsapp-automation.js";
 
 const router = Router();
 
@@ -343,13 +344,17 @@ router.post("/", async (req, res) => {
       task: notification.task ? parseTask(notification.task) : null,
     });
 
-    // --- WhatsApp Notification for High Priority Tasks ---
-    if (priority === "high" || priority === "urgent") {
-      const assignedUser = await db.user.findUnique({ where: { id: assignedToId } });
-      if (assignedUser?.phoneNumber && assignedUser.notifyWhatsApp) {
-        const msg = `🚨 *High Priority Task Assigned*\n\n*Title:* ${title}\n*Due Date:* ${new Date(dueDate).toLocaleDateString()}\n\nPlease login to TaskFlow to view the details.`;
-        sendWhatsAppMessage(assignedUser.phoneNumber, msg).catch(console.error);
-      }
+    // --- WhatsApp Notification for All Tasks ---
+    const assignedUser = await db.user.findUnique({ where: { id: assignedToId } });
+    if (assignedUser?.phoneNumber && assignedUser.notifyWhatsApp) {
+      // NOTE: We keep sendTaskAssignedTemplate in the codebase in case the client wants to go back to Meta API.
+      // But we are now using the free automation route to bypass Meta's billing errors.
+      const msg = `🔔 *New Task Assigned*\n\n*Title:* ${title}\n*Priority:* ${priority.toUpperCase()}\n*Due Date:* ${new Date(dueDate).toLocaleDateString()}\n\nPlease login to TaskFlow to view the details.`;
+      
+      sendWhatsAppAutomationMessage(
+        assignedUser.phoneNumber, 
+        msg
+      ).catch(console.error);
     }
   } catch (err) {
     console.error("Failed to create task notification", err);

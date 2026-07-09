@@ -11,3 +11,5 @@ coverage
 .idea
 build
 .next
+.wwebjs_auth
+.wwebjs_cache
