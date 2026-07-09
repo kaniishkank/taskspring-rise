@@ -174,10 +174,10 @@ export const api = {
     });
   },
 
-  async updateSubmissionStatus(taskId: string, submissionId: string, status: string, commentText?: string, managerId?: string) {
+  async updateSubmissionStatus(taskId: string, submissionId: string, status: string, commentText?: string, managerId?: string, extendedDueDate?: string) {
     return request<any>(`/tasks/${taskId}/submissions/${submissionId}`, {
       method: "PATCH",
-      body: JSON.stringify({ status, commentText, managerId }),
+      body: JSON.stringify({ status, commentText, managerId, extendedDueDate }),
     });
   },
 

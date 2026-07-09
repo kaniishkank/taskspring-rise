@@ -485,7 +485,14 @@ function TaskDetail() {
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4" />Due date</dt>
-                <dd>{format(new Date(task.dueDate), "MMM d, yyyy")}</dd>
+                <dd className="flex flex-col items-end gap-1">
+                  <span>{format(new Date(task.dueDate), "MMM d, yyyy")}</span>
+                  {task.extendedDueDate && (
+                    <span className="text-amber-600 font-semibold text-[10px] bg-amber-50 dark:bg-amber-950/20 px-1.5 py-0.5 rounded border border-amber-200">
+                      ⏳ Extended: {format(new Date(task.extendedDueDate), "MMM d, yyyy")}
+                    </span>
+                  )}
+                </dd>
               </div>
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground">Priority</dt>

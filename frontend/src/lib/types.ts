@@ -41,6 +41,7 @@ export interface Task {
   assignedById: string;
   createdAt: string;
   dueDate: string;
+  extendedDueDate?: string | null;
   attachments: { name: string; size: string }[];
   comments: { id: string; userId: string; text: string; at: string }[];
   submissions: {

@@ -439,7 +439,15 @@ function TasksPage() {
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{format(new Date(t.dueDate), "MMM d, yyyy")}</td>
+                      <td className="px-4 py-3">
+                        {t.extendedDueDate ? (
+                          <span className="text-amber-600 font-semibold text-xs bg-amber-50 dark:bg-amber-950/20 px-2 py-1 rounded border border-amber-200 inline-block">
+                            ⏳ {format(new Date(t.extendedDueDate), "MMM d, yyyy")}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">{format(new Date(t.dueDate), "MMM d, yyyy")}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">{getStatusBadge(t.status)}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex gap-1">

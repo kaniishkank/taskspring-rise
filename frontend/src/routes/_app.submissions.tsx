@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { openMockFile } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_app/submissions")({
   beforeLoad: () => {
@@ -42,6 +43,7 @@ function SubmissionsPage() {
   const [modalTaskId, setModalTaskId] = useState("");
   const [modalSubId, setModalSubId] = useState("");
   const [modalFeedback, setModalFeedback] = useState("");
+  const [modalExtensionDate, setModalExtensionDate] = useState("");
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectTaskId, setRejectTaskId] = useState("");
   const [rejectSubId, setRejectSubId] = useState("");
@@ -85,6 +87,7 @@ function SubmissionsPage() {
     setModalTaskId(taskId);
     setModalSubId(subId);
     setModalFeedback("");
+    setModalExtensionDate("");
     setModalOpen(true);
   };
 
@@ -97,7 +100,7 @@ function SubmissionsPage() {
     setModalOpen(false);
     setProcessing((prev) => ({ ...prev, [modalSubId]: true }));
     try {
-      await api.updateSubmissionStatus(modalTaskId, modalSubId, "changes_requested", modalFeedback, currentUser?.id);
+      await api.updateSubmissionStatus(modalTaskId, modalSubId, "changes_requested", modalFeedback, currentUser?.id, modalExtensionDate || undefined);
       toast.success("Submission reviewed as changes requested");
       void loadData();
     } catch {
@@ -170,6 +173,19 @@ function SubmissionsPage() {
                     </div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
                       {user?.name || "Former Staff Member"} · submitted {sub?.at ? format(new Date(sub.at), "MMM d, yyyy · HH:mm") : ""}
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {task?.extendedDueDate ? (
+                        <span className="text-amber-600 font-semibold text-xs bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded border border-amber-200 inline-block">
+                          ⏳ Extended Deadline: {new Date(task.extendedDueDate).toLocaleDateString()}
+                        </span>
+                      ) : (
+                        task?.dueDate && (
+                          <span className="text-slate-500 text-xs">
+                            Deadline: {new Date(task.dueDate).toLocaleDateString()}
+                          </span>
+                        )
+                      )}
                     </div>
                   </div>
                 </div>
@@ -262,6 +278,15 @@ function SubmissionsPage() {
                 rows={4}
                 value={modalFeedback}
                 onChange={(e) => setModalFeedback(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="modal-extension-date" className="text-sm font-semibold">Extension Due Date (Optional)</Label>
+              <Input
+                id="modal-extension-date"
+                type="date"
+                value={modalExtensionDate}
+                onChange={(e) => setModalExtensionDate(e.target.value)}
               />
             </div>
             <DialogFooter className="flex justify-end gap-2 pt-2">

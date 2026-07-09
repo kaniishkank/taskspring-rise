@@ -570,7 +570,7 @@ router.patch("/:id/status", async (req, res) => {
 });
 
 router.patch("/:id/submissions/:submissionId", async (req, res) => {
-  const { status, commentText, managerId } = req.body;
+  const { status, commentText, managerId, extendedDueDate } = req.body;
 
   const user = await getAuthUser(req);
   if (!user || user.role === "STAFF") {
@@ -603,13 +603,28 @@ router.patch("/:id/submissions/:submissionId", async (req, res) => {
   } else if (status === "changes_requested") {
     taskStatus = "in_progress";
     notificationTitle = "Changes Requested";
-    notificationMsg = "Your manager has requested changes.";
+    const formattedDate = extendedDueDate ? new Date(extendedDueDate).toLocaleDateString() : "unspecified";
+    notificationMsg = `Your manager has requested changes. The deadline has been extended to ${formattedDate}.`;
     notificationCategory = "rejection";
+
+    // Send WhatsApp notification if user has opt-in
+    const assignedUser = await db.user.findFirst({
+      where: { tasksToDo: { some: { id: req.params.id } } }
+    });
+    if (assignedUser?.phoneNumber && assignedUser.notifyWhatsApp) {
+      const msg = `⏳ *Changes Requested & Deadline Extended*\n\n*Title:* Revision required\n*New Deadline:* ${formattedDate}\n*Reason/Feedback:* ${commentText || "None"}\n\nPlease login to TaskFlow to revise your submission.`;
+      sendWhatsAppMessage(assignedUser.phoneNumber, msg).catch(console.error);
+    }
+  }
+
+  const taskUpdateData: any = { status: taskStatus };
+  if (status === "changes_requested") {
+    taskUpdateData.extendedDueDate = extendedDueDate ? new Date(extendedDueDate) : null;
   }
 
   const task = await db.task.update({
     where: { id: req.params.id },
-    data: { status: taskStatus },
+    data: taskUpdateData,
   });
 
   if (commentText && managerId) {
