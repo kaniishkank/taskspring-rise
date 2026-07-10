@@ -31,7 +31,11 @@ function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("[Login] Form submitted! ID:", loginId);
-    if (!loginId.trim()) {
+    
+    const cleanEmail = loginId.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail) {
       console.log("[Login] Empty ID, returning.");
       return;
     }
@@ -39,7 +43,7 @@ function LoginPage() {
     setError("");
     try {
       console.log("[Login] Calling api.login...");
-      const response = await api.login(loginId, password);
+      const response = await api.login(cleanEmail, cleanPassword);
       console.log("[Login] Success! User:", response.user);
       window.sessionStorage.setItem("mgg_user", JSON.stringify({ ...response.user, token: response.token }));
       toast.success(`Welcome back, ${response.user.name}!`);
