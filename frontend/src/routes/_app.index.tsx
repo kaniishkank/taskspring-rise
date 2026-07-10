@@ -56,7 +56,26 @@ function Dashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [showSyncToast, setShowSyncToast] = useState(false);
   const navigate = useNavigate();
+
+  const handleForceManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await api.get('/tasks');
+      setTasks([]);
+      setSubmissions([]);
+      setTasks(response.data.tasks);
+      setSubmissions(response.data.submissions || response.data.tasks.filter((t: any) => t.status === 'SUBMITTED'));
+      console.log("⚡ Portal State Synchronized Flawlessly!");
+    } catch (err) {
+      console.error("Manual sync critical error:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -68,27 +87,42 @@ function Dashboard() {
     } catch {}
   }, [navigate]);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [taskData, notificationData, userData, currentData] = await Promise.all([
-          api.getTasks(),
-          api.getNotifications(),
-          api.getUsers(),
-          api.getCurrentUser(),
-        ]);
-        setTasks(taskData);
-        setNotifications(notificationData);
-        setUsers(userData);
-        setCurrentUser(currentData.user);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+  const load = async () => {
+    try {
+      const [taskData, notificationData, userData, currentData] = await Promise.all([
+        api.getTasks(),
+        api.getNotifications(),
+        api.getUsers(),
+        api.getCurrentUser(),
+      ]);
+      setTasks(taskData);
+      setNotifications(notificationData);
+      setUsers(userData);
+      setCurrentUser(currentData.user);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
     void load();
+
+    // Set up a background sync routine every 2500ms
+    const syncInterval = setInterval(() => {
+      void load();
+    }, 2500);
+
+    // Listen for task updates to sync real-time UI immediately
+    const handleTasksUpdate = () => {
+      void load();
+    };
+    window.addEventListener("mgg_tasks_updated", handleTasksUpdate);
+    return () => {
+      clearInterval(syncInterval);
+      window.removeEventListener("mgg_tasks_updated", handleTasksUpdate);
+    };
   }, []);
 
   const total = tasks.length;
@@ -161,11 +195,38 @@ function Dashboard() {
         title={currentUser?.role === "STAFF" ? "My dashboard" : "Manager dashboard"}
         description={currentUser?.role === "STAFF" ? `Overview of ${currentUser?.name ?? "your"}'s tasks and upcoming deadlines.` : "Overview of tasks across your team this week."}
         actions={
-          currentUser?.role !== "STAFF" && (
-            <Button asChild>
-              <Link to="/tasks/new"><Plus className="mr-1.5 h-4 w-4" />New task</Link>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  console.log("Forcing manual network sync...");
+                  const res = await api.get('/tasks'); 
+                  
+                  if (res.data) {
+                    setTasks([...res.data.tasks]);
+                    if (res.data.submissions) {
+                      setSubmissions([...res.data.submissions]);
+                    } else {
+                      setSubmissions([...res.data.tasks.filter((t: any) => t.status === 'SUBMITTED')]);
+                    }
+                    setShowSyncToast(true);
+                    setTimeout(() => setShowSyncToast(false), 1500);
+                  }
+                } catch (syncError) {
+                  console.error("Sync button network failure:", syncError);
+                }
+              }}
+              className="gap-1.5 font-semibold text-xs border-muted-foreground/20"
+            >
+              🔄 Sync Portals (1s)
             </Button>
-          )
+            {currentUser?.role !== "STAFF" && (
+              <Button asChild>
+                <Link to="/tasks/new"><Plus className="mr-1.5 h-4 w-4" />New task</Link>
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -366,6 +427,26 @@ function Dashboard() {
             })}
         </ul>
       </div>
+      {showSyncToast && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          backgroundColor: '#10b981',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          fontWeight: 'bold',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          transition: 'all 0.3s ease-in-out'
+        }}>
+          <span>✓</span> Sync Completed
+        </div>
+      )}
     </div>
   );
 }

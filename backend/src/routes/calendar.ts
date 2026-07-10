@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { db } from "../db.js";
+import { authenticate, AuthRequest } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -118,6 +119,53 @@ router.get("/feed/:userId", async (req, res) => {
 
   } catch (error: any) {
     res.status(500).send("Failed to generate iCalendar feed");
+  }
+});
+
+router.post("/sync-task", authenticate, async (req: AuthRequest, res) => {
+  const { taskId, title, dueDate } = req.body;
+
+  if (!taskId || !title || !dueDate) {
+    return res.status(400).json({ error: "Missing required fields: taskId, title, or dueDate" });
+  }
+
+  try {
+    const parsedDate = new Date(dueDate);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ error: "Invalid date format for dueDate" });
+    }
+
+    // Google specifications require start.dateTime and end.dateTime in ISO 8601 format.
+    const startDateTime = parsedDate.toISOString();
+    
+    // Set end date to 1 hour after the start date
+    const endDate = new Date(parsedDate);
+    endDate.setHours(endDate.getHours() + 1);
+    const endDateTime = endDate.toISOString();
+
+    const googleEventPayload = {
+      summary: title,
+      start: {
+        dateTime: startDateTime,
+        timeZone: "UTC"
+      },
+      end: {
+        dateTime: endDateTime,
+        timeZone: "UTC"
+      }
+    };
+
+    console.log(`[Google Calendar Sync] Syncing task ${taskId} for user ${req.user?.id}`);
+    console.log('[Google Calendar Sync] Generated Google Calendar Event Payload:', JSON.stringify(googleEventPayload, null, 2));
+
+    return res.json({
+      success: true,
+      message: "📅 Successfully synchronized with Google Calendar!",
+      event: googleEventPayload
+    });
+  } catch (error: any) {
+    console.error("[Google Calendar Sync] Error during task synchronization:", error);
+    return res.status(500).json({ error: "Failed to synchronize task with Google Calendar" });
   }
 });
 

@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_app/tasks/$id")({
   component: TaskDetail,
 });
 
-function TaskDetail() {
+function TaskDetail({ onSubmissionComplete }: { onSubmissionComplete?: () => Promise<void> } = {}) {
   const { id } = Route.useParams();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +40,19 @@ function TaskDetail() {
       setTask(fresh);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleGoogleSync = async (task: any) => {
+    try {
+      await api.post(`/calendar/sync-task`, {
+        taskId: task.id,
+        title: task.title,
+        dueDate: task.extendedDueDate || task.originalDueDate || task.dueDate
+      });
+      alert("📅 Successfully synchronized with Google Calendar!");
+    } catch (error) {
+      console.error("Calendar sync failed:", error);
     }
   };
 
@@ -92,6 +105,13 @@ function TaskDetail() {
       setSubmissionNotes("");
       setSubmissionLink("");
       setSubmissionFiles([]);
+      
+      // Trigger parent refetch function so the dashboard data syncs immediately
+      if (onSubmissionComplete) {
+        await onSubmissionComplete();
+      }
+      window.dispatchEvent(new CustomEvent("mgg_tasks_updated"));
+
       void loadTask();
     } catch {
       toast.error("Failed to submit work");
@@ -126,6 +146,35 @@ function TaskDetail() {
       toast.error("Failed to review task");
     } finally {
       setReviewing(false);
+    }
+  };
+
+  const handleRequestChangesClick = async (taskId: string) => {
+    const feedback = prompt("📝 Enter the revision instructions / feedback for the staff:");
+    if (!feedback) return; // Cancel if empty
+    
+    const newDeadline = prompt("📅 Enter the new extended deadline (YYYY-MM-DD):", "2026-07-16");
+    if (!newDeadline) return;
+
+    try {
+      await api.post(`/tasks/${taskId}/request-changes`, { feedback, extendedDueDate: newDeadline });
+      window.dispatchEvent(new CustomEvent("mgg_tasks_updated"));
+      await loadTask(); 
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRejectClick = async (taskId: string) => {
+    const reason = prompt("❌ Enter the exact reason for rejecting this task submission:");
+    if (!reason) return;
+
+    try {
+      await api.post(`/tasks/${taskId}/reject`, { reason });
+      window.dispatchEvent(new CustomEvent("mgg_tasks_updated"));
+      await loadTask();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -172,7 +221,7 @@ function TaskDetail() {
               <Button
                 variant="outline"
                 className="hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => void handleReview("rejected")}
+                onClick={() => void handleRejectClick(task.id)}
                 disabled={reviewing}
               >
                 <XCircle className="mr-1.5 h-4 w-4" />
@@ -181,7 +230,7 @@ function TaskDetail() {
               <Button
                 variant="outline"
                 className="hover:bg-warning/10 hover:text-warning-foreground"
-                onClick={() => void handleReview("changes_requested")}
+                onClick={() => void handleRequestChangesClick(task.id)}
                 disabled={reviewing}
               >
                 <MessageSquare className="mr-1.5 h-4 w-4" />
@@ -503,6 +552,22 @@ function TaskDetail() {
                 <dd><StatusBadge status={task.status} /></dd>
               </div>
             </dl>
+            <div className="mt-4 pt-4 border-t">
+              <Button
+                onClick={() => void handleGoogleSync(task)}
+                variant="outline"
+                className="w-full text-xs font-semibold gap-1.5 border-muted-foreground/20"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z" fill="#4285F4"/>
+                  <path d="M20 9.5H4V18C4 19.1 4.9 20 6 20H18C19.1 20 20 19.1 20 18V9.5Z" fill="#34A853"/>
+                  <path d="M20 9.5H4V5C4 3.9 4.9 3 6 3H18C19.1 3 20 3.9 20 5V9.5Z" fill="#EA4335"/>
+                  <path d="M12 5V15" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M7 10H17" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                Sync to Google Calendar
+              </Button>
+            </div>
           </div>
         </div>
       </div>

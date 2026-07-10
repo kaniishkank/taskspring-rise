@@ -239,5 +239,24 @@ export const api = {
     });
   },
 
+  async post(path: string, body: any) {
+    return request<any>(path, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
 
+  async get(path: string) {
+    const data = await request<any>(path, {
+      method: "GET",
+    });
+    const tasks = Array.isArray(data) ? data : [];
+    const submissions = Array.isArray(data) ? data.filter((t: any) => t.status?.toUpperCase() === 'SUBMITTED') : [];
+    
+    const arr: any = [...tasks];
+    arr.data = [...tasks];
+    arr.data.tasks = [...tasks];
+    arr.data.submissions = [...submissions];
+    return arr;
+  },
 };

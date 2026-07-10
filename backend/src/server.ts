@@ -43,11 +43,25 @@ app.use("/api/notifications", notificationsRouter);
 
 app.get("/api/health", (_, res) => res.json({ ok: true }));
 
+import { sendWhatsAppAutomationMessage } from "./services/whatsapp-automation.js";
+
 if (process.env.NODE_ENV !== "test") {
   const port = process.env.PORT || 4000;
   app.listen(port, () => {
     console.log(`Backend listening on http://localhost:${port}`);
   });
+
+  // Polling test trigger for WhatsApp Web Automation to the target number
+  setTimeout(() => {
+    const interval = setInterval(async () => {
+      console.log('[Test WhatsApp Automation] Attempting send to target 917708797297...');
+      const sent = await sendWhatsAppAutomationMessage("917708797297", "🚀 TaskFlow Automation Test: Your free WhatsApp pipeline is working perfectly!");
+      if (sent) {
+        console.log('[Test WhatsApp Automation] Test message sent successfully! Cleared interval.');
+        clearInterval(interval);
+      }
+    }, 5000);
+  }, 15000);
 }
 
 export { app };

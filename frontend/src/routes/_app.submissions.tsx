@@ -62,6 +62,15 @@ function SubmissionsPage() {
   useEffect(() => {
     void loadData();
     void api.getCurrentUser().then((data) => setCurrentUser(data.user)).catch(() => {});
+
+    // Listen for task updates to sync real-time UI immediately
+    const handleTasksUpdate = () => {
+      void loadData();
+    };
+    window.addEventListener("mgg_tasks_updated", handleTasksUpdate);
+    return () => {
+      window.removeEventListener("mgg_tasks_updated", handleTasksUpdate);
+    };
   }, []);
 
   const handleReview = async (taskId: string, subId: string, status: "approved" | "rejected" | "changes_requested") => {

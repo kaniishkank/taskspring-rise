@@ -122,6 +122,15 @@ function TasksPage() {
 
   useEffect(() => {
     void loadData();
+
+    // Listen for task updates to sync real-time UI immediately
+    const handleTasksUpdate = () => {
+      void loadData();
+    };
+    window.addEventListener("mgg_tasks_updated", handleTasksUpdate);
+    return () => {
+      window.removeEventListener("mgg_tasks_updated", handleTasksUpdate);
+    };
   }, []);
 
   // Reset page when filters change
