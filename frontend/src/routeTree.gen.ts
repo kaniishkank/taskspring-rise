@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as QrRouteImport } from './routes/qr'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
@@ -23,6 +24,11 @@ import { Route as AppTasksIndexRouteImport } from './routes/_app.tasks.index'
 import { Route as AppTasksNewRouteImport } from './routes/_app.tasks.new'
 import { Route as AppTasksIdRouteImport } from './routes/_app.tasks.$id'
 
+const QrRoute = QrRouteImport.update({
+  id: '/qr',
+  path: '/qr',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -91,6 +97,7 @@ const AppTasksIdRoute = AppTasksIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
+  '/qr': typeof QrRoute
   '/calendar': typeof AppCalendarRoute
   '/my-tasks': typeof AppMyTasksRoute
   '/notifications': typeof AppNotificationsRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/qr': typeof QrRoute
   '/calendar': typeof AppCalendarRoute
   '/my-tasks': typeof AppMyTasksRoute
   '/notifications': typeof AppNotificationsRoute
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/qr': typeof QrRoute
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/my-tasks': typeof AppMyTasksRoute
   '/_app/notifications': typeof AppNotificationsRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/qr'
     | '/calendar'
     | '/my-tasks'
     | '/notifications'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/qr'
     | '/calendar'
     | '/my-tasks'
     | '/notifications'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/login'
+    | '/qr'
     | '/_app/calendar'
     | '/_app/my-tasks'
     | '/_app/notifications'
@@ -181,10 +193,18 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  QrRoute: typeof QrRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/qr': {
+      id: '/qr'
+      path: '/qr'
+      fullPath: '/qr'
+      preLoaderRoute: typeof QrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -312,6 +332,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  QrRoute: QrRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

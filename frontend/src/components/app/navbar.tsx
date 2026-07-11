@@ -342,7 +342,14 @@ export function Navbar({
             </div>
             <ul className="max-h-80 divide-y overflow-y-auto">
               {notifications.slice(0, 5).map((n) => (
-                <li key={n.id} className="group relative flex gap-3 p-3 pr-10 hover:bg-accent/40">
+                <li 
+                  key={n.id} 
+                  className="group relative flex gap-3 p-3 pr-10 hover:bg-accent/40 cursor-pointer"
+                  onClick={() => {
+                    if (n.taskId) navigate({ to: `/tasks/${n.taskId}` });
+                    else navigate({ to: `/notifications` });
+                  }}
+                >
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-muted" : "bg-primary"}`} />
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">{n.title}</div>

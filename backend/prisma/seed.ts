@@ -121,44 +121,8 @@ async function main() {
     await db.user.create({ data: s });
   }
 
-  // 3. Programmatic Cross-Assignment Task Loop (Total 18 Tasks)
-  const now = new Date();
-  let taskCounter = 1;
-
-  for (const m of managers) {
-    for (const s of staff) {
-      // Alternate status, priority, and due times for variety
-      const status = taskCounter % 2 === 0 ? "IN_PROGRESS" : "ASSIGNED";
-      
-      // Ensure at least 6 tasks are marked as "HIGH" priority (e.g., taskCounter % 3 === 0)
-      const priority = taskCounter % 3 === 0 ? "HIGH" : (taskCounter % 3 === 1 ? "MEDIUM" : "LOW");
-      
-      // Due date set within the next 48 hours (e.g., alternating between 24 and 36 hours from now)
-      const dueOffsetHours = taskCounter % 2 === 0 ? 24 : 36;
-      const dueDate = new Date(now.getTime() + dueOffsetHours * 60 * 60 * 1000);
-
-      const mShortName = m.name.split(" ").slice(-1)[0];
-      const sShortName = s.name.split(" ")[1];
-
-      await db.task.create({
-        data: {
-          title: `Q1 Curriculum Audit Review ${taskCounter}`,
-          description: `Collaborative academic review of lesson plans and assessments assigned by ${m.name} to ${s.name}. Please complete within the allocated timeline.`,
-          status,
-          priority,
-          dueDate,
-          assignedToId: s.id,
-          assignedById: m.id
-        }
-      });
-
-      taskCounter++;
-    }
-  }
-
   console.log(`Seed completed successfully!`);
   console.log(`Created 3 new Managers (plus 1 baseline Manager) and 6 Staff users.`);
-  console.log(`Created 18 cross-assigned tasks with varied priorities.`);
 }
 
 main()

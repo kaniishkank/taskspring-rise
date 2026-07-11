@@ -8,6 +8,7 @@ import notificationsRouter from "./routes/notifications.js";
 import calendarRouter from "./routes/calendar.js";
 import { initializeCronJobs } from "./jobs/cron.js";
 import { initWhatsAppAutomation } from "./services/whatsapp-automation.js";
+import path from "path";
 
 dotenv.config();
 
@@ -41,6 +42,10 @@ app.use("/api/tasks", tasksRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/notifications", notificationsRouter);
 
+app.get("/api/qr", (req, res) => {
+  res.sendFile(path.resolve(process.cwd(), "../whatsapp-qr.html"));
+});
+
 app.get("/api/health", (_, res) => res.json({ ok: true }));
 
 import { sendWhatsAppAutomationMessage } from "./services/whatsapp-automation.js";
@@ -51,17 +56,7 @@ if (process.env.NODE_ENV !== "test") {
     console.log(`Backend listening on http://localhost:${port}`);
   });
 
-  // Polling test trigger for WhatsApp Web Automation to the target number
-  setTimeout(() => {
-    const interval = setInterval(async () => {
-      console.log('[Test WhatsApp Automation] Attempting send to target 917708797297...');
-      const sent = await sendWhatsAppAutomationMessage("917708797297", "🚀 TaskFlow Automation Test: Your free WhatsApp pipeline is working perfectly!");
-      if (sent) {
-        console.log('[Test WhatsApp Automation] Test message sent successfully! Cleared interval.');
-        clearInterval(interval);
-      }
-    }, 5000);
-  }, 15000);
+
 }
 
 export { app };

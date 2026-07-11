@@ -1,7 +1,7 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
-import { CheckCircle2, MessageSquare, Paperclip, XCircle } from "lucide-react";
+import { CheckCircle2, MessageSquare, Paperclip, XCircle, Search, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/app/page-header";
@@ -10,7 +10,7 @@ import { UserAvatar } from "@/components/app/user-avatar";
 import { api, clearApiCache } from "@/lib/api";
 import type { Task, User } from "@/lib/types";
 import { toast } from "sonner";
-import { openMockFile } from "@/lib/utils";
+import { openMockFile, viewBase64File, downloadBase64File, isPreviewable } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -238,17 +238,38 @@ function SubmissionsPage() {
                   {(sub?.files || []).map((f: any, i: number) => {
                     const isObject = typeof f === 'object' && f !== null;
                     const name = isObject ? f.name : f;
+                    const content = isObject ? f.content : "";
                     return (
-                      <button
+                      <div
                         key={i}
-                        type="button"
-                        onClick={() => openMockFile(name)}
-                        className="inline-flex items-center gap-1 rounded-md border bg-primary/10 border-primary/20 hover:bg-primary/25 px-2 py-1 text-xs text-primary transition cursor-pointer"
+                        className="inline-flex items-center gap-2 rounded-md border bg-primary/5 border-primary/20 px-3 py-1.5 text-xs text-primary transition"
                       >
-                        <Paperclip className="h-3 w-3 shrink-0" />
-                        <span>{name}</span>
-                        {isObject && <span className="text-[10px] text-muted-foreground ml-1">{f.size}</span>}
-                      </button>
+                        <Paperclip className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="max-w-[200px] truncate font-medium text-foreground">{name}</span>
+                        {isObject && <span className="text-[10px] text-muted-foreground mr-1">{f.size}</span>}
+                        <div className="flex items-center gap-1 ml-auto">
+                          {isPreviewable(name, content) && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 text-primary hover:bg-primary/20"
+                              title="View"
+                              onClick={() => content ? viewBase64File(content, name) : openMockFile(name)}
+                            >
+                              <Search className="h-3 w-3" />
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-primary hover:bg-primary/20"
+                            title="Download"
+                            onClick={() => content ? downloadBase64File(content, name) : openMockFile(name)}
+                          >
+                            <Download className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
                     );
                   })}
                   {(sub?.links || []).map((l) => (

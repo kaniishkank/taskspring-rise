@@ -21,6 +21,7 @@ function AppLayout() {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
+  const [showNotifBanner, setShowNotifBanner] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,6 +30,9 @@ function AppLayout() {
       navigate({ to: "/login", replace: true });
     } else {
       setIsAuth(true);
+    }
+    if ("Notification" in window && Notification.permission === "default") {
+      setShowNotifBanner(true);
     }
   }, [navigate]);
 
@@ -148,10 +152,18 @@ function AppLayout() {
 
                 if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
                   const taskTitle = data.task?.title || data.title;
-                  new Notification("High Priority Task Alert", {
+                  const n = new Notification("High Priority Task Alert", {
                     body: "Task: '" + taskTitle + "' requires immediate attention.",
                     icon: "/favicon.ico"
                   });
+                  n.onclick = () => {
+                    window.focus();
+                    if (data.taskId) {
+                      navigate({ to: `/tasks/${data.taskId}` });
+                    } else {
+                      navigate({ to: "/notifications" });
+                    }
+                  };
                 }
               }
             } catch (err) {
@@ -189,6 +201,33 @@ function AppLayout() {
           onToggleCollapse={() => setCollapsed((v) => !v)}
           collapsed={collapsed}
         />
+        {showNotifBanner && (
+          <div className="bg-primary px-4 py-3 text-primary-foreground flex items-center justify-between shadow-sm z-20">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-foreground/20">!</span>
+              Please enable Push Notifications to receive real-time task alerts and reminders.
+            </div>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => {
+                  void requestFirebaseNotificationPermission().then(() => {
+                    toast.success("Push notifications enabled!");
+                    setShowNotifBanner(false);
+                  });
+                }}
+                className="rounded bg-primary-foreground px-3 py-1 text-xs font-semibold text-primary hover:bg-primary-foreground/90 transition"
+              >
+                Enable Notifications
+              </button>
+              <button 
+                onClick={() => setShowNotifBanner(false)}
+                className="rounded px-3 py-1 text-xs font-semibold hover:bg-primary-foreground/20 transition"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
         <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
           <Outlet />
         </main>
