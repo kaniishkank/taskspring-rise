@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/app/page-header";
 import { api } from "@/lib/api";
 import { useEffect, useState } from "react";
@@ -8,12 +8,15 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 export const Route = createFileRoute("/_app/whatsapp")({
   beforeLoad: () => {
     if (typeof window !== "undefined") {
+      let isDevOps = false;
       try {
         const user = JSON.parse(window.sessionStorage.getItem("mgg_user") || "{}");
-        if (!user || user.email !== "devops@mggschool.edu") {
-          throw redirect({ to: "/tasks" });
+        if (user && user.email === "devops@mggschool.edu") {
+          isDevOps = true;
         }
-      } catch (e) {
+      } catch (e) {}
+
+      if (!isDevOps) {
         throw redirect({ to: "/tasks" });
       }
     }
@@ -22,10 +25,29 @@ export const Route = createFileRoute("/_app/whatsapp")({
 });
 
 function WhatsAppSetup() {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<{ isReady: boolean; qrBase64: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
+    // Double-check authorization on mount
+    try {
+      const user = JSON.parse(window.sessionStorage.getItem("mgg_user") || "{}");
+      if (!user || user.email !== "devops@mggschool.edu") {
+        navigate({ to: "/tasks", replace: true });
+        return;
+      }
+      setIsAuthorized(true);
+    } catch (e) {
+      navigate({ to: "/tasks", replace: true });
+      return;
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!isAuthorized) return;
+    
     const fetchStatus = async () => {
       try {
         const res = await api.getWhatsAppStatus();
@@ -39,7 +61,10 @@ function WhatsAppSetup() {
     fetchStatus();
     const interval = setInterval(fetchStatus, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthorized]);
+
+  if (!isAuthorized) return null;
+
 
   return (
     <div>
