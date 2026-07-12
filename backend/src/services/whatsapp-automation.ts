@@ -69,25 +69,47 @@ export function initWhatsAppAutomation() {
 
 /**
  * Sends a free-form WhatsApp message using the linked phone via puppeteer automation.
+ * Retries up to 3 times with a 3-second delay if the client is not yet ready
+ * or if the WhatsApp Web execution context is refreshing mid-send.
  */
-export async function sendWhatsAppAutomationMessage(to: string, message: string) {
-  if (!whatsappClient || !isReady) {
-    console.warn('[WhatsApp Automation] Client not ready. Cannot send message to', to);
-    return false;
-  }
+export async function sendWhatsAppAutomationMessage(to: string, message: string, attempt = 1): Promise<boolean> {
+  const MAX_ATTEMPTS = 3;
+  const RETRY_DELAY_MS = 3000;
 
   // Format to standard international number without +
   const formattedTo = to.replace(/\D/g, '');
   if (!formattedTo) return false;
 
+  // If client is not ready yet, wait and retry
+  if (!whatsappClient || !isReady) {
+    if (attempt >= MAX_ATTEMPTS) {
+      console.warn(`[WhatsApp Automation] Client not ready after ${MAX_ATTEMPTS} attempts. Giving up on message to ${formattedTo}.`);
+      return false;
+    }
+    console.warn(`[WhatsApp Automation] Client not ready (attempt ${attempt}/${MAX_ATTEMPTS}). Retrying in ${RETRY_DELAY_MS / 1000}s...`);
+    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+    return sendWhatsAppAutomationMessage(to, message, attempt + 1);
+  }
+
   try {
     // whatsapp-web.js requires the @c.us suffix for regular contacts
     const chatId = `${formattedTo}@c.us`;
     await whatsappClient.sendMessage(chatId, message);
-    console.log(`[WhatsApp Automation] Successfully sent message to ${formattedTo}`);
+    console.log(`[WhatsApp Automation] ✅ Successfully sent message to ${formattedTo}`);
     return true;
-  } catch (error) {
-    console.error('[WhatsApp Automation] Failed to send message:', error);
+  } catch (error: any) {
+    // "Execution context was destroyed" means WhatsApp Web refreshed mid-send. Retry.
+    const isRetryable = error?.message?.includes('Execution context was destroyed') ||
+                        error?.message?.includes('getChat') ||
+                        error?.message?.includes('detached');
+
+    if (isRetryable && attempt < MAX_ATTEMPTS) {
+      console.warn(`[WhatsApp Automation] Send failed due to page refresh (attempt ${attempt}/${MAX_ATTEMPTS}). Retrying in ${RETRY_DELAY_MS / 1000}s...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      return sendWhatsAppAutomationMessage(to, message, attempt + 1);
+    }
+
+    console.error(`[WhatsApp Automation] Failed to send message after ${attempt} attempt(s):`, error?.message ?? error);
     return false;
   }
 }
