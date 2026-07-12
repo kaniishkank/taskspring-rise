@@ -484,35 +484,16 @@ router.post("/:id/submissions", async (req, res) => {
     return res.status(403).json({ error: "Access denied. You can only submit proof for tasks assigned to you." });
   }
 
-  const existingSubmission = await db.submission.findFirst({
-    where: { taskId: req.params.id }
+  const submission = await db.submission.create({
+    data: {
+      taskId: req.params.id,
+      userId,
+      notes,
+      files: JSON.stringify(files ?? []),
+      links: JSON.stringify(links ?? []),
+      status,
+    },
   });
-
-  let submission;
-  if (existingSubmission) {
-    submission = await db.submission.update({
-      where: { id: existingSubmission.id },
-      data: {
-        userId,
-        notes,
-        files: JSON.stringify(files ?? []),
-        links: JSON.stringify(links ?? []),
-        status,
-        at: new Date()
-      }
-    });
-  } else {
-    submission = await db.submission.create({
-      data: {
-        taskId: req.params.id,
-        userId,
-        notes,
-        files: JSON.stringify(files ?? []),
-        links: JSON.stringify(links ?? []),
-        status,
-      },
-    });
-  }
 
   const updatedTask = await db.task.update({
     where: { id: req.params.id },
@@ -676,15 +657,13 @@ router.patch("/:id/submissions/:submissionId", async (req, res) => {
   const taskTitle = task.title;
 
   if (staffPhoneNumber && assignedUser?.notifyWhatsApp) {
-    try {
-      if (status === "changes_requested") {
-        const deadlineVal = extendedDueDate ? (typeof extendedDueDate === "string" ? extendedDueDate : new Date(extendedDueDate).toLocaleDateString()) : "Not specified";
-        await sendWhatsAppAutomationMessage(staffPhoneNumber, `📝 *Task Update: Revisions Requested*\n\n*Task:* ${taskTitle}\n*New Deadline:* ${deadlineVal}\n\n_Please log back into the portal to read feedback comments and resubmit your updated documents._`);
-      } else if (status === "rejected") {
-        await sendWhatsAppAutomationMessage(staffPhoneNumber, `❌ *Task Update: Revisions Rejected*\n\n*Task:* ${taskTitle}\n*Status:* Rejected\n\n_Your submission did not meet compliance parameters. Please review your task workspace instructions and completely re-upload the files._`);
-      }
-    } catch (waErr) {
-      console.error("[WhatsApp Automation] Status change notification failed to send:", waErr);
+    if (status === "changes_requested") {
+      const deadlineVal = extendedDueDate ? (typeof extendedDueDate === "string" ? extendedDueDate : new Date(extendedDueDate).toLocaleDateString()) : "Not specified";
+      sendWhatsAppAutomationMessage(staffPhoneNumber, `📝 *Task Update: Revisions Requested*\n\n*Task:* ${taskTitle}\n*New Deadline:* ${deadlineVal}\n\n_Please log back into the portal to read feedback comments and resubmit your updated documents._`)
+        .catch(waErr => console.error("[WhatsApp Automation] Status change notification failed to send:", waErr));
+    } else if (status === "rejected") {
+      sendWhatsAppAutomationMessage(staffPhoneNumber, `❌ *Task Update: Revisions Rejected*\n\n*Task:* ${taskTitle}\n*Status:* Rejected\n\n_Your submission did not meet compliance parameters. Please review your task workspace instructions and completely re-upload the files._`)
+        .catch(waErr => console.error("[WhatsApp Automation] Status change notification failed to send:", waErr));
     }
   }
 
@@ -782,12 +761,9 @@ router.post("/:id/request-changes", authenticate, async (req: AuthRequest, res) 
   });
   const staffPhoneNumber = assignedUser?.phoneNumber ? assignedUser.phoneNumber.replace(/\s+/g, "") : "";
   if (staffPhoneNumber && assignedUser?.notifyWhatsApp) {
-    try {
-      const deadlineVal = extendedDueDate || "Not specified";
-      await sendWhatsAppAutomationMessage(staffPhoneNumber, `📝 *Task Update: Revisions Requested*\n\n*Task:* ${task.title}\n*New Deadline:* ${deadlineVal}\n\n_Please log back into the portal to read feedback comments and resubmit your updated documents._`);
-    } catch (waErr) {
-      console.error("[WhatsApp Automation] Request changes notification failed to send:", waErr);
-    }
+    const deadlineVal = extendedDueDate || "Not specified";
+    sendWhatsAppAutomationMessage(staffPhoneNumber, `📝 *Task Update: Revisions Requested*\n\n*Task:* ${task.title}\n*New Deadline:* ${deadlineVal}\n\n_Please log back into the portal to read feedback comments and resubmit your updated documents._`)
+      .catch(waErr => console.error("[WhatsApp Automation] Request changes notification failed to send:", waErr));
   }
 
   try {
@@ -863,11 +839,8 @@ router.post("/:id/reject", authenticate, async (req: AuthRequest, res) => {
   });
   const staffPhoneNumber = assignedUser?.phoneNumber ? assignedUser.phoneNumber.replace(/\s+/g, "") : "";
   if (staffPhoneNumber && assignedUser?.notifyWhatsApp) {
-    try {
-      await sendWhatsAppAutomationMessage(staffPhoneNumber, `❌ *Task Update: Revisions Rejected*\n\n*Task:* ${task.title}\n*Status:* Rejected\n\n_Your submission did not meet compliance parameters. Please review your task workspace instructions and completely re-upload the files._`);
-    } catch (waErr) {
-      console.error("[WhatsApp Automation] Rejection notification failed to send:", waErr);
-    }
+    sendWhatsAppAutomationMessage(staffPhoneNumber, `❌ *Task Update: Revisions Rejected*\n\n*Task:* ${task.title}\n*Status:* Rejected\n\n_Your submission did not meet compliance parameters. Please review your task workspace instructions and completely re-upload the files._`)
+      .catch(waErr => console.error("[WhatsApp Automation] Rejection notification failed to send:", waErr));
   }
 
   try {

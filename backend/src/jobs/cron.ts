@@ -26,7 +26,7 @@ async function sendDailyDigests() {
       include: {
         tasksToDo: {
           where: {
-            status: { notIn: ['completed'] }
+            status: { notIn: ['completed', 'submitted', 'approved'] }
           },
           include: {
             assignedBy: true

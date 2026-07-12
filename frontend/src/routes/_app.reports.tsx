@@ -10,7 +10,7 @@ import { format, subDays, subWeeks, isSameDay, startOfYear } from "date-fns";
 import { api } from "@/lib/api";
 import type { Task, User } from "@/lib/types";
 import { toast } from "sonner";
-
+import ExcelJS from "exceljs";
 export const Route = createFileRoute("/_app/reports")({
   beforeLoad: () => {
     if (typeof window !== "undefined") {
@@ -154,60 +154,77 @@ function ReportsPage() {
     toast.success("Report exported successfully as CSV!");
   };
 
-  const handleExcelExport = () => {
-    const htmlContent = `
-      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-      <head>
-      <!--[if gte mso 9]>
-      <xml>
-       <x:ExcelWorkbook>
-        <x:ExcelWorksheets>
-         <x:ExcelWorksheet>
-          <x:Name>TaskFlow Report</x:Name>
-          <x:WorksheetOptions>
-           <x:DisplayGridlines/>
-          </x:WorksheetOptions>
-         </x:ExcelWorksheet>
-        </x:ExcelWorksheets>
-       </x:ExcelWorkbook>
-      </xml>
-      <![endif]-->
-      <style>
-        table { border-collapse: collapse; }
-        td, th { border: 1px solid #cbd5e1; padding: 8px; font-family: sans-serif; font-size: 12px; }
-        th { background-color: #f1f5f9; font-weight: bold; }
-        .header-row { font-size: 16px; font-weight: bold; background-color: #4f46e5; color: white; text-align: center; }
-        .section-row { font-size: 14px; font-weight: bold; background-color: #e2e8f0; }
-      </style>
-      </head>
-      <body>
-      <table>
-        <tr><th colspan="3" class="header-row">TaskFlow Report (Period: ${period.toUpperCase()})</th></tr>
-        <tr><th>Metric</th><th colspan="2">Value</th></tr>
-        <tr><td>Total Tasks</td><td colspan="2">${totalTasks}</td></tr>
-        <tr><td>Completed Tasks</td><td colspan="2">${completedTasks}</td></tr>
-        <tr><td>Pending Tasks</td><td colspan="2">${pendingTasks}</td></tr>
-        <tr><td>Overdue Tasks</td><td colspan="2">${overdueTasks}</td></tr>
-        <tr><td colspan="3"></td></tr>
-        <tr><th colspan="3" class="section-row">Staff Member Performance</th></tr>
-        <tr><th>Name</th><th>On Time Tasks</th><th>Late/Overdue Tasks</th></tr>
-        ${performanceData.map((p) => `<tr><td>${p.name}</td><td>${p.on_time}</td><td>${p.late}</td></tr>`).join("")}
-      </table>
-      </body>
-      </html>
-    `;
+  const handleExcelExport = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('TaskFlow Report');
 
-    const blob = new Blob([htmlContent], { type: "application/vnd.ms-excel;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `mgg_report_${period}_${format(new Date(), "yyyyMMdd")}.xls`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // Configure columns
+      sheet.columns = [
+        { header: '', key: 'col1', width: 25 },
+        { header: '', key: 'col2', width: 20 },
+        { header: '', key: 'col3', width: 20 },
+      ];
 
-    toast.success("Report exported successfully as Excel!");
+      // Main Header
+      const titleRow = sheet.addRow([`TaskFlow Report (Period: ${period.toUpperCase()})`]);
+      sheet.mergeCells('A1:C1');
+      titleRow.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+      titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
+      titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      // Subheader Metric
+      const metricHeader = sheet.addRow(['Metric', 'Value', '']);
+      sheet.mergeCells(`B${metricHeader.number}:C${metricHeader.number}`);
+      metricHeader.font = { bold: true };
+      metricHeader.getCell(1).border = { bottom: { style: 'thin' } };
+      metricHeader.getCell(2).border = { bottom: { style: 'thin' } };
+
+      // Metrics
+      const m1 = sheet.addRow(['Total Tasks', totalTasks, '']);
+      sheet.mergeCells(`B${m1.number}:C${m1.number}`);
+      const m2 = sheet.addRow(['Completed Tasks', completedTasks, '']);
+      sheet.mergeCells(`B${m2.number}:C${m2.number}`);
+      const m3 = sheet.addRow(['Pending Tasks', pendingTasks, '']);
+      sheet.mergeCells(`B${m3.number}:C${m3.number}`);
+      const m4 = sheet.addRow(['Overdue Tasks', overdueTasks, '']);
+      sheet.mergeCells(`B${m4.number}:C${m4.number}`);
+      
+      sheet.addRow([]);
+
+      // Subheader Performance
+      const perfTitle = sheet.addRow(['Staff Member Performance']);
+      sheet.mergeCells(`A${perfTitle.number}:C${perfTitle.number}`);
+      perfTitle.font = { bold: true, size: 12 };
+      perfTitle.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+      perfTitle.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      const perfHeader = sheet.addRow(['Name', 'On Time Tasks', 'Late/Overdue Tasks']);
+      perfHeader.font = { bold: true };
+      perfHeader.eachCell(cell => {
+        cell.border = { bottom: { style: 'thin' } };
+      });
+
+      performanceData.forEach(p => {
+        sheet.addRow([p.name, p.on_time, p.late]);
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `mgg_report_${period}_${format(new Date(), "yyyyMMdd")}.xlsx`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("Report exported successfully as Excel!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate Excel file");
+    }
   };
 
   const handlePDFExport = () => {
@@ -225,17 +242,20 @@ function ReportsPage() {
           aside, nav, header, button, .no-print, [role="combobox"], .flex-wrap {
             display: none !important;
           }
-          main {
+          body, main {
+            background: white !important;
             padding: 0 !important;
             margin: 0 !important;
-            background: white !important;
           }
-          body {
-            background: white !important;
+          .grid-cols-2 {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
           }
           .print-full-width {
-            grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
-            width: 100% !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 16px !important;
+          }
+          .recharts-wrapper {
+            max-height: 250px !important;
           }
         }
       `}</style>

@@ -28,6 +28,7 @@ function TaskDetail({ onSubmissionComplete }: { onSubmissionComplete?: () => Pro
   
   // Local form states
   const [commentText, setCommentText] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
   const [submissionNotes, setSubmissionNotes] = useState("");
   const [submissionLink, setSubmissionLink] = useState("");
   const [submissionFiles, setSubmissionFiles] = useState<{name: string, size: string, content: string}[]>([]);
@@ -80,12 +81,15 @@ function TaskDetail({ onSubmissionComplete }: { onSubmissionComplete?: () => Pro
     e.preventDefault();
     if (!commentText.trim() || !currentUser || !task) return;
     try {
+      setPostingComment(true);
       await api.addComment(task.id, currentUser.id, commentText);
       toast.success("Comment added");
       setCommentText("");
-      void loadTask();
+      await loadTask();
     } catch {
       toast.error("Failed to add comment");
+    } finally {
+      setPostingComment(false);
     }
   };
 
@@ -153,7 +157,9 @@ function TaskDetail({ onSubmissionComplete }: { onSubmissionComplete?: () => Pro
     const feedback = prompt("📝 Enter the revision instructions / feedback for the staff:");
     if (!feedback) return; // Cancel if empty
     
-    const newDeadline = prompt("📅 Enter the new extended deadline (YYYY-MM-DD):", "2026-07-16");
+    const activeDeadline = task.extendedDueDate || task.dueDate;
+    const defaultDeadline = activeDeadline ? format(new Date(activeDeadline), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
+    const newDeadline = prompt("📅 Enter the new extended deadline (YYYY-MM-DD):", defaultDeadline);
     if (!newDeadline) return;
 
     try {
@@ -311,7 +317,7 @@ function TaskDetail({ onSubmissionComplete }: { onSubmissionComplete?: () => Pro
                 <div className="rounded-xl border bg-card p-6 shadow-sm">
                   <h3 className="mb-4 text-sm font-semibold flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-primary" />
-                    Submit Proof of Work
+                    {task.submissions && task.submissions.length > 0 ? "Resubmit Proof of Work" : "Submit Proof of Work"}
                   </h3>
                   <form onSubmit={(e) => void handleSubmitWork(e)} className="space-y-4">
                     <div>
@@ -368,7 +374,7 @@ function TaskDetail({ onSubmissionComplete }: { onSubmissionComplete?: () => Pro
                     </div>
                     <div className="flex justify-end">
                       <Button type="submit" disabled={submittingWork}>
-                        {submittingWork ? "Submitting..." : (task.status === "submitted" ? "Update Submission" : "Submit Task")}
+                        {submittingWork ? "Submitting..." : (task.submissions && task.submissions.length > 0 ? "Submit Revision" : "Submit Task")}
                       </Button>
                     </div>
                   </form>
@@ -409,7 +415,7 @@ function TaskDetail({ onSubmissionComplete }: { onSubmissionComplete?: () => Pro
                     onChange={(e) => setCommentText(e.target.value)}
                   />
                   <div className="flex justify-end">
-                    <Button size="sm" type="submit"><Send className="mr-1.5 h-3.5 w-3.5" />Comment</Button>
+                    <Button size="sm" type="submit" disabled={postingComment}><Send className="mr-1.5 h-3.5 w-3.5" />{postingComment ? "Posting..." : "Comment"}</Button>
                   </div>
                 </form>
               </div>
