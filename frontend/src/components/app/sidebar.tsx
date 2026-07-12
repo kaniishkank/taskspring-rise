@@ -10,6 +10,7 @@ import {
   Users,
   Settings,
   Layers,
+  Smartphone,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ const items: Item[] = [
   { to: "/notifications", label: "Notifications", icon: Bell, roles: ["OPERATION", "MANAGER", "STAFF"] },
   { to: "/users", label: "Users", icon: Users, roles: ["OPERATION", "MANAGER"] },
   { to: "/settings", label: "Settings", icon: Settings, roles: ["OPERATION", "MANAGER", "STAFF"] },
+  { to: "/whatsapp", label: "WhatsApp Setup", icon: Smartphone, roles: ["MANAGER"] },
 ];
 
 /**
@@ -51,7 +53,12 @@ export function AppSidebar({
   useEffect(() => {
     void api.getCurrentUser().then((data) => setCurrentUser(data.user)).catch(() => {});
   }, []);
-  const visible = items.filter((i) => currentUser ? i.roles.includes(currentUser.role) : true);
+  const visible = items.filter((item) => {
+    if (item.to === "/whatsapp" && currentUser?.email !== "devops@mggschool.edu") {
+      return false;
+    }
+    return currentUser ? item.roles.includes(currentUser.role) : false;
+  });
 
   return (
     <aside

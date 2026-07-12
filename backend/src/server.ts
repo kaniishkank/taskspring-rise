@@ -9,6 +9,7 @@ import calendarRouter from "./routes/calendar.js";
 import { initializeCronJobs } from "./jobs/cron.js";
 import { initWhatsAppAutomation } from "./services/whatsapp-automation.js";
 import path from "path";
+import { authenticate } from "./middleware/auth.js";
 
 dotenv.config();
 
@@ -43,9 +44,15 @@ app.use("/api/users", usersRouter);
 app.use("/api/notifications", notificationsRouter);
 
 
+import { getWhatsAppStatus, sendWhatsAppAutomationMessage } from "./services/whatsapp-automation.js";
+
 app.get("/api/health", (_, res) => res.json({ ok: true }));
 
-import { sendWhatsAppAutomationMessage } from "./services/whatsapp-automation.js";
+app.get("/api/whatsapp/status", authenticate, (req, res) => {
+  // We can restrict to MANAGER roles if needed, or check req user.
+  // We will assume authenticate middleware attaches req.user
+  res.json(getWhatsAppStatus());
+});
 
 if (process.env.NODE_ENV !== "test") {
   const port = process.env.PORT || 4000;

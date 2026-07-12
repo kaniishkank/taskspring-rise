@@ -259,4 +259,6 @@ export const api = {
     arr.data.submissions = [...submissions];
     return arr;
   },
+
+  getWhatsAppStatus: () => request<any>("/whatsapp/status", { method: "GET" }),
 };

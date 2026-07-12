@@ -1,4 +1,5 @@
 import qrcode from 'qrcode-terminal';
+import qrcodeBase64 from 'qrcode';
 import pkg from 'whatsapp-web.js';
 import fs from 'fs';
 import path from 'path';
@@ -6,6 +7,14 @@ const { Client, LocalAuth } = pkg;
 
 let whatsappClient: any = null;
 let isReady = false;
+let latestQRBase64: string | null = null;
+
+export function getWhatsAppStatus() {
+  return {
+    isReady,
+    qrBase64: latestQRBase64
+  };
+}
 
 export function initWhatsAppAutomation() {
   console.log('[WhatsApp Automation] Initializing client...');
@@ -24,17 +33,29 @@ export function initWhatsAppAutomation() {
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
   });
 
-  whatsappClient.on('qr', (qr: string) => {
+  whatsappClient.on('qr', async (qr: string) => {
     console.log('\n=========================================');
     console.log('📱 SCAN THIS QR CODE IN WHATSAPP TO LINK');
     console.log('=========================================\n');
     qrcode.generate(qr, { small: true });
+    
+    try {
+      latestQRBase64 = await qrcodeBase64.toDataURL(qr);
+    } catch (e) {
+      console.error('Failed to generate base64 QR', e);
+    }
     console.log('\n👉 QR Code printed to terminal! Scan it with your phone.');
   });
 
   whatsappClient.on('ready', () => {
     isReady = true;
+    latestQRBase64 = null;
     console.log('[WhatsApp Automation] Client is READY and linked!');
+  });
+
+  whatsappClient.on('disconnected', () => {
+    isReady = false;
+    latestQRBase64 = null;
   });
 
   whatsappClient.on('auth_failure', (msg: string) => {

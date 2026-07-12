@@ -24,6 +24,19 @@ async function main() {
     }
   });
 
+  const devopsPassword = await bcrypt.hash("DevOps@2026", 10);
+  await db.user.create({
+    data: {
+      id: "devops1",
+      name: "System Administrator",
+      email: "devops@mggschool.edu",
+      role: "MANAGER",
+      department: "IT",
+      active: true,
+      password: devopsPassword
+    }
+  });
+
   // 1. Create 3 Distinct MANAGER Accounts
   const managers = [
     {
