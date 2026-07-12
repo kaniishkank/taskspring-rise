@@ -26,24 +26,10 @@ export function initWhatsAppAutomation() {
 
   whatsappClient.on('qr', (qr: string) => {
     console.log('\n=========================================');
-    console.log('📱 SCAN THIS QR CODE WITH YOUR WHATSAPP');
+    console.log('📱 SCAN THIS QR CODE IN WHATSAPP TO LINK');
     console.log('=========================================\n');
     qrcode.generate(qr, { small: true });
-
-    // HTML fallback output
-    const htmlContent = `
-      <html>
-        <body style="display:flex; justify-content:center; align-items:center; height:100vh; background:#111;">
-          <div style="background:white; padding:20px; border-radius:8px;">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr)}" />
-            <p style="font-family:sans-serif; text-align:center; margin-top:10px; color:#333; font-weight:bold;">Scan to link TaskFlow</p>
-          </div>
-        </body>
-      </html>
-    `;
-    const backupPath = path.resolve(process.cwd(), '../whatsapp-qr.html');
-    fs.writeFileSync(backupPath, htmlContent);
-    console.log(`\n👉 Backup QR Code saved! Open '${backupPath}' directly in your browser to scan.\n`);
+    console.log('\n👉 QR Code printed to terminal! Scan it with your phone.');
   });
 
   whatsappClient.on('ready', () => {

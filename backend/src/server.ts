@@ -42,9 +42,6 @@ app.use("/api/tasks", tasksRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/notifications", notificationsRouter);
 
-app.get("/api/qr", (req, res) => {
-  res.sendFile(path.resolve(process.cwd(), "../whatsapp-qr.html"));
-});
 
 app.get("/api/health", (_, res) => res.json({ ok: true }));
 
