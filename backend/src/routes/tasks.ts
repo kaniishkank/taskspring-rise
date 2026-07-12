@@ -191,7 +191,7 @@ router.get("/", async (req, res) => {
   const user = await getAuthUser(req);
   if (user) {
     if (user.role === "STAFF") {
-      // Bypassed for demo validation: where.assignedToId = user.id;
+      where.assignedToId = user.id;
     } else if (user.role === "MANAGER") {
       where.assignedById = user.id;
     }
