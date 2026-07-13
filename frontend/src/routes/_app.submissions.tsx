@@ -201,36 +201,7 @@ function SubmissionsPage() {
                     </div>
                   </div>
                 </div>
-                {isPending && (
-                  <div className="flex shrink-0 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={isSubProcessing}
-                      className="hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => openRejectModal(task?.id || "", sub?.id || "")}
-                    >
-                      <XCircle className="mr-1.5 h-4 w-4" />Reject
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={isSubProcessing}
-                      className="border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-600 dark:text-amber-400 hover:text-amber-700"
-                      onClick={() => openMakeChanges(task?.id || "", sub?.id || "")}
-                    >
-                      <MessageSquare className="mr-1.5 h-4 w-4" />Make Changes
-                    </Button>
-                    <Button
-                      size="sm"
-                      disabled={isSubProcessing}
-                      className="bg-success text-success-foreground hover:bg-success/90"
-                      onClick={() => void handleReview(task?.id || "", sub?.id || "", "approved")}
-                    >
-                      <CheckCircle2 className="mr-1.5 h-4 w-4" />Approve
-                    </Button>
-                  </div>
-                )}
+
               </div>
               <p className="mt-4 text-sm">{sub?.notes || ""}</p>
               {(((sub?.files || [])).length > 0 || ((sub?.links || [])).length > 0) && (
@@ -283,13 +254,45 @@ function SubmissionsPage() {
                 </div>
               )}
               {isPending && (
-                <Textarea
-                  placeholder="Leave a comment for the staff member..."
-                  rows={2}
-                  className="mt-4"
-                  value={comments[sub?.id || ""] ?? ""}
-                  onChange={(e) => setComments((prev) => ({ ...prev, [sub?.id || ""]: e.target.value }))}
-                />
+                <div className="mt-5 space-y-3 rounded-lg border border-border/50 bg-muted/30 p-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-semibold text-muted-foreground">Feedback (Optional)</Label>
+                    <Textarea
+                      placeholder="Optional feedback (Sent to staff member when you click Approve)..."
+                      rows={2}
+                      value={comments[sub?.id || ""] ?? ""}
+                      onChange={(e) => setComments((prev) => ({ ...prev, [sub?.id || ""]: e.target.value }))}
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isSubProcessing}
+                      className="hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => openRejectModal(task?.id || "", sub?.id || "")}
+                    >
+                      <XCircle className="mr-1.5 h-4 w-4" />Reject
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isSubProcessing}
+                      className="border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-600 dark:text-amber-400 hover:text-amber-700"
+                      onClick={() => openMakeChanges(task?.id || "", sub?.id || "")}
+                    >
+                      <MessageSquare className="mr-1.5 h-4 w-4" />Make Changes
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={isSubProcessing}
+                      className="bg-success text-success-foreground hover:bg-success/90"
+                      onClick={() => void handleReview(task?.id || "", sub?.id || "", "approved")}
+                    >
+                      <CheckCircle2 className="mr-1.5 h-4 w-4" />Approve Submission
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           );

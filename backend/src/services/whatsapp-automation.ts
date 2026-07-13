@@ -1,11 +1,11 @@
 import qrcode from 'qrcode-terminal';
 import qrcodeBase64 from 'qrcode';
-import pkg from 'whatsapp-web.js';
+import { makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
+import pino from 'pino';
 import fs from 'fs';
 import path from 'path';
-const { Client, LocalAuth } = pkg;
 
-let whatsappClient: any = null;
+let whatsappClient: ReturnType<typeof makeWASocket> | null = null;
 let isReady = false;
 let latestQRBase64: string | null = null;
 
@@ -16,61 +16,64 @@ export function getWhatsAppStatus() {
   };
 }
 
-export function initWhatsAppAutomation() {
-  console.log('[WhatsApp Automation] Initializing client...');
+export async function initWhatsAppAutomation() {
+  console.log('[WhatsApp Automation] Initializing Baileys client...');
   
-  whatsappClient = new Client({
-    authStrategy: new LocalAuth(),
-    puppeteer: {
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-extensions',
-        '--use-gl=desktop'
-      ]
-    },
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+  const { state, saveCreds } = await useMultiFileAuthState('.baileys_auth');
+  const { version, isLatest } = await fetchLatestBaileysVersion();
+  console.log(`[WhatsApp Automation] using WA v${version.join('.')}, isLatest: ${isLatest}`);
+
+  whatsappClient = makeWASocket({
+    version,
+    auth: state,
+    printQRInTerminal: false, // We'll handle QR generation ourselves to match the old format
+    logger: pino({ level: 'silent' }), // Suppress verbose logging from Baileys
+    browser: ['TaskSpring', 'Chrome', '1.0.0']
   });
 
-  whatsappClient.on('qr', async (qr: string) => {
-    console.log('\n=========================================');
-    console.log('📱 SCAN THIS QR CODE IN WHATSAPP TO LINK');
-    console.log('=========================================\n');
-    qrcode.generate(qr, { small: true });
-    
-    try {
-      latestQRBase64 = await qrcodeBase64.toDataURL(qr);
-    } catch (e) {
-      console.error('Failed to generate base64 QR', e);
+  whatsappClient.ev.on('creds.update', saveCreds);
+
+  whatsappClient.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update;
+
+    if (qr) {
+      console.log('\n=========================================');
+      console.log('📱 SCAN THIS QR CODE IN WHATSAPP TO LINK');
+      console.log('=========================================\n');
+      qrcode.generate(qr, { small: true });
+      
+      try {
+        latestQRBase64 = await qrcodeBase64.toDataURL(qr);
+      } catch (e) {
+        console.error('Failed to generate base64 QR', e);
+      }
+      console.log('\n👉 QR Code printed to terminal! Scan it with your phone.');
     }
-    console.log('\n👉 QR Code printed to terminal! Scan it with your phone.');
-  });
 
-  whatsappClient.on('ready', () => {
-    isReady = true;
-    latestQRBase64 = null;
-    console.log('[WhatsApp Automation] Client is READY and linked!');
-  });
-
-  whatsappClient.on('disconnected', () => {
-    isReady = false;
-    latestQRBase64 = null;
-  });
-
-  whatsappClient.on('auth_failure', (msg: string) => {
-    console.error('[WhatsApp Automation] Authentication failed:', msg);
-  });
-
-  whatsappClient.initialize().catch((err: any) => {
-    console.error('[WhatsApp Automation] Failed to initialize:', err);
+    if (connection === 'close') {
+      isReady = false;
+      const shouldReconnect = (lastDisconnect?.error as any)?.output?.statusCode !== DisconnectReason.loggedOut;
+      console.log('[WhatsApp Automation] Connection closed due to', lastDisconnect?.error, ', reconnecting:', shouldReconnect);
+      
+      if (shouldReconnect) {
+        initWhatsAppAutomation();
+      } else {
+        console.log('[WhatsApp Automation] Logged out. Deleting session...');
+        latestQRBase64 = null;
+        fs.rmSync('.baileys_auth', { recursive: true, force: true });
+        initWhatsAppAutomation(); // Restart to get a new QR code
+      }
+    } else if (connection === 'open') {
+      isReady = true;
+      latestQRBase64 = null;
+      console.log('[WhatsApp Automation] Client is READY and linked!');
+    }
   });
 }
 
 /**
- * Sends a free-form WhatsApp message using the linked phone via puppeteer automation.
- * Retries up to 3 times with a 3-second delay if the client is not yet ready
- * or if the WhatsApp Web execution context is refreshing mid-send.
+ * Sends a free-form WhatsApp message using the linked phone via Baileys.
+ * Retries up to 3 times with a 3-second delay if the client is not yet ready.
  */
 export async function sendWhatsAppAutomationMessage(to: string, message: string, attempt = 1): Promise<boolean> {
   const MAX_ATTEMPTS = 3;
@@ -92,19 +95,16 @@ export async function sendWhatsAppAutomationMessage(to: string, message: string,
   }
 
   try {
-    // whatsapp-web.js requires the @c.us suffix for regular contacts
-    const chatId = `${formattedTo}@c.us`;
-    await whatsappClient.sendMessage(chatId, message);
+    // Baileys requires the @s.whatsapp.net suffix for regular contacts
+    const jid = `${formattedTo}@s.whatsapp.net`;
+    await whatsappClient.sendMessage(jid, { text: message });
     console.log(`[WhatsApp Automation] ✅ Successfully sent message to ${formattedTo}`);
     return true;
   } catch (error: any) {
-    // "Execution context was destroyed" means WhatsApp Web refreshed mid-send. Retry.
-    const isRetryable = error?.message?.includes('Execution context was destroyed') ||
-                        error?.message?.includes('getChat') ||
-                        error?.message?.includes('detached');
+    const isRetryable = error?.message?.includes('Connection Closed') || error?.message?.includes('timeout');
 
     if (isRetryable && attempt < MAX_ATTEMPTS) {
-      console.warn(`[WhatsApp Automation] Send failed due to page refresh (attempt ${attempt}/${MAX_ATTEMPTS}). Retrying in ${RETRY_DELAY_MS / 1000}s...`);
+      console.warn(`[WhatsApp Automation] Send failed due to connection issue (attempt ${attempt}/${MAX_ATTEMPTS}). Retrying in ${RETRY_DELAY_MS / 1000}s...`);
       await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
       return sendWhatsAppAutomationMessage(to, message, attempt + 1);
     }
@@ -113,3 +113,4 @@ export async function sendWhatsAppAutomationMessage(to: string, message: string,
     return false;
   }
 }
+
