@@ -1,3 +1,4 @@
+import "express-async-errors";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -53,6 +54,9 @@ app.get("/api/whatsapp/status", authenticate, (req, res) => {
   // We will assume authenticate middleware attaches req.user
   res.json(getWhatsAppStatus());
 });
+
+import { globalErrorHandler } from "./middleware/errorHandler.js";
+app.use(globalErrorHandler as any);
 
 if (process.env.NODE_ENV !== "test") {
   const port = process.env.PORT || 4000;
