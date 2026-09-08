@@ -30,7 +30,7 @@ Since Docker is not installed on your current development system, build the cont
 
 3. **Push the Image to Docker Hub:**
    ```bash
-   docker push <your-dockerhub-username>/taskspring-rise:latest
+   docker push nishathjp/taskspring-rise:latest
    ```
 
 ---
@@ -94,7 +94,7 @@ You can paste the environment variables directly into the run command using `-e`
 On the EC2 instance, navigate to the folder containing your `.env` file and run:
 ```bash
 # Pull the latest image
-docker pull <your-dockerhub-username>/taskspring-rise:latest
+docker pull nishathjp/taskspring-rise:latest
 
 # Run the container using the environment file
 docker run -d \
@@ -109,7 +109,7 @@ docker run -d \
 On the EC2 instance, paste the following command directly into your terminal (replace values with the contents from your local `.env` file):
 ```bash
 # Pull the latest image
-docker pull <your-dockerhub-username>/taskspring-rise:latest
+docker pull nishathjp/taskspring-rise:latest
 
 # Run the container with inline variables
 docker run -d \
@@ -160,3 +160,9 @@ docker run -d \
 
 
   docker logs taskspring-app 2>&1 | grep "ngrok Public URL"
+
+
+docker exec -it taskspring-app sh
+grep -n -A20 -B20 "backupPath" /app/backend/dist/services/whatsapp-automation.js
+
+docker logs -f taskspring-app
