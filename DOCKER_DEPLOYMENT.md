@@ -139,30 +139,9 @@ docker run -d \
 ## 💡 Image Size Optimization Details
 - **Multi-Stage Build**: Separates build-time tools (TypeScript compiler, webpack/vite loaders) from runtime files.
 - **Alpine Linux**: Uses Alpine base images to minimize the filesystem footprints.
-- **Dependency Pruning**: The backend runs `npm prune --omit=dev` to remove heavy development packages, keeping the final container image under ~300MB.
-
-
-
-docker run -d \
-  --name taskspring-app \
-  -p 80:80 \
-  -e NGROK_AUTHTOKEN="298cdsa8NGHRODlNwSLRl7wbcK9_cixdkaqfbXUjPDJhSBVX" \
-  -e DATABASE_URL="postgresql://postgres.rnoiimdtowlrzhlzijpp:bangban4120D@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true" \
-  -e DIRECT_URL="postgresql://postgres.rnoiimdtowlrzhlzijpp:bangban4120D@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres" \
-  -e JWT_SECRET="your-super-secret-key-change-in-production" \
-  -e PORT=4000 \
-  -e META_WHATSAPP_PHONE_NUMBER_ID="1148775651651936" \
-  -e META_WHATSAPP_ACCESS_TOKEN="EAAY3YahesJwBRn1udm6J5JAOZCjausFLocDsy7WZBho1fKBHIcGlxNhZCeV0MWbxMfXjKPfudzFlIjYmDBYHec0Ckt3wOIcjzwRmZAMXEzerW27ro0nvKYIedRfuytgwFbio2T14LZB8qDET4HMbXtxaSMO1JvkEdJi9nUNXixAUMZBsw980D55SyJ3aBZAvQZDZD" \
-  --restart unless-stopped \
-  nishathjp/taskspring-rise:latest
+- **Dependency Pruning**: The backend runs `npm prune --omit=dev` to remove heavy development packages, keeping the final container image under ~300MB
 
 
 
 
-  docker logs taskspring-app 2>&1 | grep "ngrok Public URL"
 
-
-docker exec -it taskspring-app sh
-grep -n -A20 -B20 "backupPath" /app/backend/dist/services/whatsapp-automation.js
-
-docker logs -f taskspring-app
