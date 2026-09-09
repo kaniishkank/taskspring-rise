@@ -1,9 +1,10 @@
-name: TaskFlow CI Verification Pipeline
+name: TaskFlow CI/CD Pipeline
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   verify:
@@ -80,3 +81,53 @@ jobs:
         # 5. Run tests
         cd ../frontend
         npx playwright test
+
+  build-and-push:
+    name: Build & Push Docker Image
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Determine Docker Image Name
+        id: image-name
+        run: |
+          if [ -n "${{ secrets.DOCKERHUB_REPO }}" ]; then
+            echo "image=${{ secrets.DOCKERHUB_REPO }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
+            echo "image=${{ secrets.DOCKERHUB_USERNAME }}/taskspring-rise" >> $GITHUB_OUTPUT
+          else
+            echo "image=nishathjp/taskspring-rise" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image-name.outputs.image }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
+            type=ref,event=branch
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

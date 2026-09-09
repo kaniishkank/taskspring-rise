@@ -1,0 +1,49 @@
+# Git & GitHub
+.git
+.github
+.gitignore
+
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs & caches
+dist
+**/dist
+.output
+**/.output
+.wrangler
+**/.wrangler
+build
+.next
+
+# Environment and sensitive files
+.env
+.env.*
+!.env.example
+
+# Authentication and cache directories
+.wwebjs_auth
+.wwebjs_cache
+
+# Database local files
+backend/prisma/*.db
+backend/prisma/*.db-journal
+
+# Test artifacts & coverage
+coverage
+playwright-report
+test-results
+
+# Editor and OS files
+.vscode
+.idea
+*.log
+.DS_Store
+Thumbs.db
+
+# Markdown documentation
+docs/
+*.md
+!README.md
+whatsapp-qr.html
