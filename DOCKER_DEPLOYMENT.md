@@ -15,7 +15,23 @@ We have added the following files to your project root:
 
 ## 📦 Build & Push to Docker Hub
 
-Since Docker is not installed on your current development system, build the container on a machine with Docker installed (or inside a CI/CD pipeline).
+### Method 1: Automated via GitHub Actions (Recommended)
+
+The repository includes an automated CI/CD pipeline defined in [`.github/workflows/verify.yml`](file:///.github/workflows/verify.yml). Upon every push to `main` (or via manual trigger), it runs the automated test suite and automatically builds and pushes the container to Docker Hub.
+
+#### Prerequisites / Repository Secrets:
+Go to your GitHub repository -> **Settings** -> **Secrets and variables** -> **Actions** -> **New repository secret**:
+1. `DOCKERHUB_USERNAME`: Your Docker Hub username (e.g. `nishathjp`).
+2. `DOCKERHUB_TOKEN`: Your Docker Hub Personal Access Token (Create via Docker Hub -> Account Settings -> Security -> New Access Token with Read & Write access).
+3. *(Optional)* `DOCKERHUB_REPO`: Custom repository name if different from `<DOCKERHUB_USERNAME>/taskspring-rise`.
+
+Once configured, any push to `main` (or clicking **Run workflow** in the GitHub Actions tab) will automatically build the image and push `latest` as well as commit SHA tags to Docker Hub.
+
+---
+
+### Method 2: Manual Local Build & Push
+
+If you prefer building and pushing manually from a machine with Docker installed:
 
 1. **Build and Tag the Image:**
    Replace `<your-dockerhub-username>` with your actual Docker Hub username.
