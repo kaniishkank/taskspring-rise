@@ -15,18 +15,22 @@ import { authenticate } from "./middleware/auth.js";
 dotenv.config();
 
 // Initialize background jobs
-initializeCronJobs();
-initWhatsAppAutomation();
+try {
+  initializeCronJobs();
+} catch (err) {
+  console.warn('[Cron] Failed to initialize cron jobs:', err);
+}
+
+try {
+  initWhatsAppAutomation();
+} catch (err) {
+  console.warn('[WhatsApp] Automation init skipped/deferred:', err);
+}
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:8080",
-  process.env.FRONTEND_URL
-].filter(Boolean) as string[];
-
 app.use(cors({
-  origin: allowedOrigins,
+  origin: true,
   credentials: true
 }));
 
@@ -38,20 +42,20 @@ app.use((req, res, next) => {
   next();
 });
 
+// Root & Health check routes for UptimeRobot and load balancers
+app.get("/", (_, res) => res.json({ status: "online", message: "TaskSpring Rise API is running 🚀", timestamp: new Date().toISOString() }));
+app.get("/health", (_, res) => res.json({ ok: true, status: "healthy" }));
+app.get("/api/health", (_, res) => res.json({ ok: true, status: "healthy" }));
+
 app.use("/api/calendar", calendarRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/tasks", tasksRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/notifications", notificationsRouter);
 
-
 import { getWhatsAppStatus, sendWhatsAppAutomationMessage } from "./services/whatsapp-automation.js";
 
-app.get("/api/health", (_, res) => res.json({ ok: true }));
-
 app.get("/api/whatsapp/status", authenticate, (req, res) => {
-  // We can restrict to MANAGER roles if needed, or check req user.
-  // We will assume authenticate middleware attaches req.user
   res.json(getWhatsAppStatus());
 });
 
@@ -63,8 +67,6 @@ if (process.env.NODE_ENV !== "test") {
   app.listen(port, () => {
     console.log(`Backend listening on http://localhost:${port}`);
   });
-
-
 }
 
 export { app };
