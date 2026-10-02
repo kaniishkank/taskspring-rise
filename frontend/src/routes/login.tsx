@@ -142,12 +142,96 @@ function LoginPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full gap-2" size="lg" disabled={loading}>
+              <Button type="submit" className="w-full gap-2 font-medium" size="lg" disabled={loading}>
                 <LogIn className="h-4 w-4" />
                 {loading ? "Signing in…" : "Sign in"}
               </Button>
 
+              {/* Demo Credentials Quick-Fill Section */}
+              <div className="pt-4 border-t border-border/80">
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    1-Click Demo Logins
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">Click to fill</span>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginId("principal.ramanathan@mggschool.edu");
+                      setPassword("Admin@2026");
+                      setError("");
+                      toast.info("Filled Principal (Manager) credentials");
+                    }}
+                    className="flex items-center justify-between p-2.5 rounded-lg border border-border/70 bg-secondary/40 hover:bg-secondary hover:border-primary/40 transition-all text-left group"
+                  >
+                    <div>
+                      <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+                        🎓 Principal S. Ramanathan
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        principal.ramanathan@mggschool.edu • <span className="font-mono text-[10px] bg-muted px-1 py-0.5 rounded">MANAGER</span>
+                      </div>
+                    </div>
+                    <span className="text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                      Use →
+                    </span>
+                  </button>
 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginId("divya.cs@mggschool.edu");
+                      setPassword("Admin@2026");
+                      setError("");
+                      toast.info("Filled Teacher (Staff) credentials");
+                    }}
+                    className="flex items-center justify-between p-2.5 rounded-lg border border-border/70 bg-secondary/40 hover:bg-secondary hover:border-primary/40 transition-all text-left group"
+                  >
+                    <div>
+                      <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+                        👩‍🏫 S. Divya (CS Faculty)
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        divya.cs@mggschool.edu • <span className="font-mono text-[10px] bg-muted px-1 py-0.5 rounded">STAFF</span>
+                      </div>
+                    </div>
+                    <span className="text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                      Use →
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLoginId("devops@mggschool.edu");
+                      setPassword("DevOps@2026");
+                      setError("");
+                      toast.info("Filled DevOps Admin credentials");
+                    }}
+                    className="flex items-center justify-between p-2.5 rounded-lg border border-border/70 bg-secondary/40 hover:bg-secondary hover:border-primary/40 transition-all text-left group"
+                  >
+                    <div>
+                      <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+                        🛠️ System Administrator
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        devops@mggschool.edu • <span className="font-mono text-[10px] bg-muted px-1 py-0.5 rounded">DEVOPS / QR</span>
+                      </div>
+                    </div>
+                    <span className="text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                      Use →
+                    </span>
+                  </button>
+                </div>
+                
+                <p className="mt-3 text-center text-[11px] text-muted-foreground/80">
+                  Default Password: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">Admin@2026</code> (DevOps: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono">DevOps@2026</code>)
+                </p>
+              </div>
             </form>
           </div>
         </div>
