@@ -48,14 +48,22 @@ app.get("/health", (_, res) => res.json({ ok: true, status: "healthy" }));
 app.get("/api/health", (_, res) => res.json({ ok: true, status: "healthy" }));
 
 app.use("/api/calendar", calendarRouter);
+app.use("/calendar", calendarRouter);
 app.use("/api/auth", authRouter);
+app.use("/auth", authRouter);
 app.use("/api/tasks", tasksRouter);
+app.use("/tasks", tasksRouter);
 app.use("/api/users", usersRouter);
+app.use("/users", usersRouter);
 app.use("/api/notifications", notificationsRouter);
+app.use("/notifications", notificationsRouter);
 
 import { getWhatsAppStatus, sendWhatsAppAutomationMessage } from "./services/whatsapp-automation.js";
 
 app.get("/api/whatsapp/status", authenticate, (req, res) => {
+  res.json(getWhatsAppStatus());
+});
+app.get("/whatsapp/status", authenticate, (req, res) => {
   res.json(getWhatsAppStatus());
 });
 

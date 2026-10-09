@@ -1,6 +1,7 @@
 import type { Notification, Task, User } from "./types";
 
-export const API_BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:4000/api").replace(/\/$/, "");
+const rawUrl = (import.meta.env.VITE_API_URL ?? "http://localhost:4000/api").trim().replace(/\/$/, "");
+export const API_BASE = rawUrl.endsWith("/api") ? rawUrl : `${rawUrl}/api`;
 
 interface CacheEntry {
   promise: Promise<any>;
